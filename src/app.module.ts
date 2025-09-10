@@ -1,15 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { HealthModule } from './modules/health/health.module';
-import { QueueModule } from './modules/queue/queue.module';
-import { CompaniesController } from './modules/companies.controller';
-import { CompaniesService } from './modules/companies.service';
-import { CompaniesModule } from './modules/companies/companies.module';
-import { UsersController } from './modules/users.controller';
-import { UsersService } from './modules/users.service';
+import { UsersController } from './modules/users/users.controller';
+import { UsersService } from './modules/users/users.service';
 import { UsersModule } from './modules/users/users.module';
-import { HealthController } from './modules/health.controller';
 
 @Module({
   imports: [
@@ -30,12 +24,10 @@ import { HealthController } from './modules/health.controller';
       }),
       inject: [ConfigService],
     }),
-    HealthModule,
-    CompaniesModule,
+    // Modules
     UsersModule,
-    QueueModule, // BullMQ (escalades SLA, emails, push)
   ],
-  controllers: [HealthController, UsersController, CompaniesController],
-  providers: [UsersService, CompaniesService],
+  controllers: [UsersController],
+  providers: [UsersService],
 })
 export class AppModule {}
