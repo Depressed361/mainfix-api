@@ -27,6 +27,7 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/sequelize": "^11.0.0",
+    "@nestjs/terminus": "^11.0.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.58.5",
     "class-transformer": "^0.5.1",
