@@ -1,15 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'], // 👈 pour tout voir au boot
+  });
+
   app.use(helmet());
   app.enableCors();
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api'); // -> /api/...
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  await app.listen(process.env.PORT || 4000);
-  console.log(`🚀 MainFix API on http://localhost:${process.env.PORT || 4000}`);
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  Logger.log(`🚀 MainFix API on http://localhost:${port}`);
 }
 bootstrap();
