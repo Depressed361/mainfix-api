@@ -9,8 +9,8 @@ import {
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
-import { Ticket } from './ticket.model';
-import { User } from '../users/user.model';
+import { Ticket } from './models/ticket.model';
+import { User } from '../directory/models/user.model';
 
 @Table({ tableName: 'ticket_attachments', timestamps: false })
 export class TicketAttachment extends Model<TicketAttachment> {
