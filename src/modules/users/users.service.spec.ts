@@ -40,6 +40,6 @@ describe('UsersService', () => {
 
   it('findOne() throws when missing', async () => {
     userModelMock.findByPk.mockResolvedValue(null);
-    await expect(service.findOne('123')).rejects.toThrow('User not found');
+    await expect(service.findById('123')).rejects.toThrow('User not found');
   });
 });

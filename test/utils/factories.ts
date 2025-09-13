@@ -8,6 +8,7 @@ const fallbackFaker: FakerType = {
   person: { fullName: () => 'Test User' },
   helpers: { arrayElement: <T>(arr: T[]) => arr[0] },
   // ...ajoute les autres propriétés nécessaires si besoin
+  // ...ajoute les autres propriétés nécessaires si besoin
 } as FakerType;
 
 const faker: FakerType = realFaker ?? fallbackFaker;

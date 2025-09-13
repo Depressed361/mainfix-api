@@ -24,11 +24,17 @@ export class User extends Model<User> {
   @Column({ field: 'company_id', type: DataType.UUID })
   companyId!: string;
 
+  @Column({ type: DataType.STRING, allowNull: false })
+  declare passwordHash: string;
+
   @AllowNull(false)
   @Unique
   @Index
   @Column({ type: DataType.CITEXT }) // si CITEXT indispo en local, remplace par STRING
   email!: string;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare siteId?: string;
 
   @AllowNull(false)
   @Column({ field: 'display_name', type: DataType.STRING })
