@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../directory/models/user.model';
 
@@ -11,10 +11,28 @@ export class UsersService {
   }
 
   create(data: Partial<User>) {
-    return this.users.create(data as Optional<User, NullishPropertiesOf<User>>);
+    return this.users.create(data as User);
   }
 
-  findById(id: string) {
+  async findById(id: string) {
+    const user = await this.users.findByPk(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  findAll() {
+    return this.users.findAll();
+  }
+
+  findOne(id: string) {
     return this.users.findByPk(id);
+  }
+  update(id: string, data: Partial<User>) {
+    return this.users.update(data, { where: { id } });
+  }
+  remove(id: string) {
+    return this.users.destroy({ where: { id } });
   }
 }

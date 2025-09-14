@@ -7,6 +7,7 @@ const fallbackFaker: FakerType = {
   internet: { email: () => 'test@example.com' },
   person: { fullName: () => 'Test User' },
   helpers: { arrayElement: <T>(arr: T[]) => arr[0] },
+
   // ...ajoute les autres propriétés nécessaires si besoin
   // ...ajoute les autres propriétés nécessaires si besoin
 } as FakerType;
@@ -19,6 +20,7 @@ interface User {
   displayName: string;
   role: 'occupant' | 'maintainer' | 'manager' | 'approver' | 'admin';
   active: boolean;
+  Hashedpassword?: string;
   // ...autres propriétés si besoin
 }
 
@@ -34,6 +36,7 @@ export function userFactory(overrides: Partial<User> = {}): User {
       'approver',
       'admin',
     ]),
+    Hashedpassword: 'hashedpassword',
     active: true,
     ...overrides,
   };
