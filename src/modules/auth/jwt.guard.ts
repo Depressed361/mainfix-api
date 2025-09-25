@@ -5,6 +5,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
+import { AuthActorService } from './auth-actor.service';
+import type { AuthenticatedActor } from './auth-actor.types';
 
 interface JwtPayload {
   sub: string;
@@ -14,39 +17,44 @@ interface JwtPayload {
   siteId?: string;
 }
 
-interface RequestWithUser extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-    companyId?: string;
-    siteId?: string;
-  };
-}
-
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private jwt: JwtService) {}
+  constructor(
+    private readonly jwt: JwtService,
+    private readonly actorService: AuthActorService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest<RequestWithUser>();
-    const auth = req.headers['authorization'] as string | undefined;
-    if (!auth || !auth.startsWith('Bearer ')) throw new UnauthorizedException();
-    const token = auth.slice(7);
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest<Request & { actor?: AuthenticatedActor; user?: AuthenticatedActor }>();
+    const token = this.extractToken(req);
+    const payload = this.verifyToken(token);
+    const actor = await this.actorService.loadActor(payload.sub);
+
+    req.actor = actor;
+    req.user = actor;
+
+    return true;
+  }
+
+  private extractToken(req: Request): string {
+    const header: string | string[] | undefined = req.headers['authorization'];
+    if (!header)
+      throw new UnauthorizedException('Missing authorization header');
+
+    const value: string = Array.isArray(header) ? header[0] : header;
+    if (typeof value !== 'string' || !value.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Invalid authorization header');
+    }
+    return value.slice(7).trim();
+  }
+
+  private verifyToken(token: string): JwtPayload {
     try {
-      const payload = this.jwt.verify<JwtPayload>(token, {
-        secret: process.env.JWT_SECRET,
+      return this.jwt.verify<JwtPayload>(token, {
+        secret: process.env.JWT_SECRET || 'test',
       });
-      req.user = {
-        userId: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        companyId: payload.companyId,
-        siteId: payload.siteId,
-      };
-      return true;
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid token');
     }
   }
 }

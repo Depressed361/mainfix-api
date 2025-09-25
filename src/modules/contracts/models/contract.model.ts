@@ -22,6 +22,10 @@ export class Contract extends Model<Contract> {
   @Column({ field: 'site_id', type: DataType.UUID })
   siteId!: string;
 
+  @AllowNull(true)
+  @Column({ field: 'provider_company_id', type: DataType.UUID })
+  declare providerCompanyId?: string | null;
+
   @AllowNull(false)
   @Column(DataType.TEXT)
   name!: string;

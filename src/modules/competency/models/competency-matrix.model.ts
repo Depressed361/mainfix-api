@@ -3,51 +3,67 @@ import {
   Column,
   Model,
   DataType,
-  PrimaryKey,
   Default,
+  ForeignKey,
   AllowNull,
+  BelongsTo,
   Unique,
 } from 'sequelize-typescript';
+import { ContractVersion } from '../../contracts/models/contract-version.model';
+import { Team } from '../../directory/models/team.model';
+import { Category } from '../../taxonomy/models/category.model';
+import { Building } from '../../catalog/models/buildings.model';
 
 @Table({
   tableName: 'competency_matrix',
   timestamps: false,
 })
 export class CompetencyMatrix extends Model<CompetencyMatrix> {
-  @PrimaryKey
   @Default(DataType.UUIDV4)
-  @Column(DataType.UUID)
+  @Column({ type: DataType.UUID, primaryKey: true })
   declare id: string;
 
+  @ForeignKey(() => ContractVersion)
   @AllowNull(false)
   @Unique('competency_unique')
   @Column({ field: 'contract_version_id', type: DataType.UUID })
-  contractVersionId!: string;
+  declare contractVersionId: string;
 
+  @BelongsTo(() => ContractVersion)
+  declare contractVersion?: ContractVersion;
+
+  @ForeignKey(() => Team)
   @AllowNull(false)
   @Unique('competency_unique')
   @Column({ field: 'team_id', type: DataType.UUID })
-  teamId!: string;
+  declare teamId: string;
 
+  @BelongsTo(() => Team)
+  declare team?: Team;
+
+  @ForeignKey(() => Category)
   @AllowNull(false)
   @Unique('competency_unique')
   @Column({ field: 'category_id', type: DataType.UUID })
-  categoryId!: string;
+  declare categoryId: string;
 
+  @BelongsTo(() => Category)
+  declare category?: Category;
+
+  @ForeignKey(() => Building)
   @Unique('competency_unique')
   @Column({ field: 'building_id', type: DataType.UUID })
-  buildingId?: string;
+  declare buildingId?: string | null;
+
+  @BelongsTo(() => Building)
+  declare building?: Building;
 
   @AllowNull(false)
-  @Column({
-    type: DataType.ENUM('primary', 'backup'),
-  })
-  level!: 'primary' | 'backup';
+  @Column({ type: DataType.ENUM('primary', 'backup') })
+  declare level: 'primary' | 'backup';
 
   @AllowNull(false)
   @Unique('competency_unique')
-  @Column({
-    type: DataType.ENUM('business_hours', 'after_hours', 'any'),
-  })
-  window!: 'business_hours' | 'after_hours' | 'any';
+  @Column({ type: DataType.ENUM('business_hours', 'after_hours', 'any') })
+  declare window: 'business_hours' | 'after_hours' | 'any';
 }

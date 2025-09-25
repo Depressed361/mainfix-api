@@ -10,7 +10,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { Site } from '../../../../catalog/models/site.model';
-import { Category } from '../../../../taxonomy/controllers/services/dto/models/category.model';
+import { Category } from '../../../../taxonomy/models/category.model';
 
 @Table({ tableName: 'comfort_rules', timestamps: false })
 export class ComfortRule extends Model<ComfortRule> {

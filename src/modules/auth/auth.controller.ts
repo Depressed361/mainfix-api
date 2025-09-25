@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt.guard';
@@ -19,8 +20,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me() {
-    // payload renvoyé par JwtStrategy.validate est injecté dans req.user par le guard
-    return { ok: true };
+  me(@Req() req: Request) {
+    return { actor: req.actor };
   }
 }

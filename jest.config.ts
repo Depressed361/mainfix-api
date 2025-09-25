@@ -5,7 +5,7 @@ const config: Config = {
   testEnvironment: 'node',
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
-  roots: ['<rootDir>/src'],
+  roots: ['<rootDir>/src', '<rootDir>/test'],
   clearMocks: true,
   coveragePathIgnorePatterns: ['/node_modules/'],
 };

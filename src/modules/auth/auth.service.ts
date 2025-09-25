@@ -3,7 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../directory/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
@@ -14,7 +14,19 @@ interface AuthUser {
   role: string;
   companyId?: string;
   siteId?: string;
-  passwordHash?: string;
+}
+
+type FullUser = AuthUser & { passwordHash: string };
+
+function isFullUser(value: unknown): value is FullUser {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.id === 'string' &&
+    typeof v.email === 'string' &&
+    typeof v.role === 'string' &&
+    typeof v.passwordHash === 'string'
+  );
 }
 
 @Injectable()
@@ -25,25 +37,39 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const exists = await this.users.findByEmail(dto.email);
-    if (exists) throw new ConflictException('Email already registered');
+    const maybeExisting: unknown = await this.users.findByEmail(dto.email);
+    if (isFullUser(maybeExisting)) {
+      throw new ConflictException('Email already registered');
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.users.create({
+
+    const createdUnknown: unknown = await this.users.create({
       email: dto.email,
       passwordHash,
       role: 'occupant',
       companyId: dto.companyId,
       siteId: dto.siteId,
     });
-    return this.sign(user as AuthUser);
+
+    if (!isFullUser(createdUnknown)) {
+      // Défensif: si le repo renvoie une forme inattendue
+      throw new UnauthorizedException('Failed to create user');
+    }
+
+    return this.sign(createdUnknown);
   }
 
   async login(dto: LoginDto) {
-    const user = await this.users.findByEmail(dto.email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    const ok = await bcrypt.compare(dto.password, user.passwordHash);
+    const maybeUser: unknown = await this.users.findByEmail(dto.email);
+    if (!isFullUser(maybeUser)) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const ok = await bcrypt.compare(dto.password, maybeUser.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
-    return this.sign(user as AuthUser);
+
+    return this.sign(maybeUser);
   }
 
   private sign(user: AuthUser) {

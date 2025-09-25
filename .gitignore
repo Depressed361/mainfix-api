@@ -12,9 +12,11 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# modules
+# db
+db/
+db.test/
 
-/jspm_packages/
+jspm_packages/
 # Optional npm cache directory
 .npm
 

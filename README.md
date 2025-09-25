@@ -1,98 +1,172 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# MainFix API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+MainFix API est le backend de gestion technique du produit MainFix. Il centralise les informations de referentiel (entreprises, sites, batiments, taxonomie), le cycle de vie des tickets d''intervention et les modules operationnels (couts, approbations, satisfaction, confort, reporting et SLA) au sein d''une architecture NestJS moderne.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Apercu
+- API REST NestJS 11 ecrite en TypeScript 5.7 et structuree en modules metiers coherents.
+- Persistance via Sequelize et PostgreSQL avec migrations et modeles `sequelize-typescript` maintenus dans `src/modules/**/models`.
+- Mise a disposition d''une base Redis (BullMQ) pour les traitements asynchrones et des controles d''acces avances (JWT + portees d''administration).
+- Suite de tests Jest (unitaires et end-to-end) activant les memes modules que l''application.
 
-## Description
+## Stack principale
+- **Framework** : NestJS 11, adaptateur Express, `ValidationPipe` global, Helmet et CORS actifs (`src/main.ts`).
+- **Langage & tooling** : TypeScript 5.7, ts-node, tsconfig strict (module NodeNext) et `class-validator`/`class-transformer` pour les DTO.
+- **Base de donnees** : PostgreSQL gere par Sequelize + `sequelize-typescript`, migrations dans `migrations/`, configuration CLI dans `config/config.js` et `sequelize.config.ts`.
+- **Cache & jobs** : Redis (via BullMQ) declare, pret pour les traitements differes.
+- **AuthN/AuthZ** : JWT (`@nestjs/jwt`), Bcrypt, scopes d''administration hierarchiques (`AdminScope`) et decorateurs personnalises.
+- **Tests** : Jest, Supertest, base de tests isolee (`.env.test`, `docker-compose.yml`).
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Structure du depot
+| Dossier / fichier | Role |
+| --- | --- |
+| `src/app.module.ts`, `src/main.ts` | Bootstrap NestJS, enregistrement des modules metier et configuration globale. |
+| `src/modules/` | Modules fonctionnels (auth, catalog, tickets, cost, approvals, satisfaction, etc.). Chaque module regroupe `controllers`, `services`, `dto` et `models`. |
+| `migrations/` | Scripts Sequelize CLI decrivant le schema complet (tables, index, jeux initiaux). |
+| `seeders/` | Point d''entree pour d''eventuels jeux de donnees initiaux (actuellement vide). |
+| `config/` & `sequelize.config.ts` | Configuration Sequelize pour CLI et execution (inclut support `DATABASE_URL`). |
+| `test/` | Suites Jest unitaires et e2e, utilitaires de tests et configuration (`jest-e2e.json`, `setup-e2e.ts`). |
+| `docker-compose.yml` | Stack locale Postgres (dev/test) + Redis prete a l''emploi. |
+| `eslint.config.mjs`, `.prettierrc`, `.editorconfig` | Outils qualite & formatage. |
 
-## Project setup
+## Prerequis
+- Node.js >= 20 (LTS recommandee) et npm >= 10.
+- PostgreSQL 16 et Redis 7 (gerees automatiquement via `docker-compose` si souhaite).
+- `sequelize-cli` installe en local (ou via `npx`).
+- Acces a un environnement `.env` (voir ci-dessous).
 
-```bash
-$ npm install
-```
+## Installation & demarrage rapide
+1. **Installer les dependances**
+   ```bash
+   npm install
+   ```
+2. **Configurer les variables d''environnement**
+   - Copier/adapter `.env` (un exemple minimal est fourni). Pour les tests, utiliser `.env.test`.
+3. **Lancer l''infrastructure locale** (optionnel mais recommande)
+   ```bash
+   docker compose up -d postgres_dev redis
+   ```
+4. **Appliquer le schema**
+   ```bash
+   npm run db:migrate
+   ```
+   (Ajouter `npm run db:seed` lorsque des seeders seront disponibles.)
+5. **Demarrer l''API en mode developpement**
+   ```bash
+   npm run start:dev
+   ```
+   L''API est accessible sur `http://localhost:3000/api` (prefixe global `api`).
 
-## Compile and run the project
+## Variables d''environnement
+| Variable | Description | Valeur par defaut |
+| --- | --- | --- |
+| `NODE_ENV` | Environnement d''execution (`development`, `test`, `production`). | `development` |
+| `PORT` | Port HTTP expose par NestJS. | `3000` |
+| `DB_HOST`, `DB_PORT` | Hote et port Postgres (dev). | `localhost`, `5432` |
+| `DB_USER`, `DB_PASS`, `DB_NAME` | Identifiants Postgres (dev). | `mainfix`, `mainfix`, `mainfix` |
+| `DATABASE_URL` | Chaine de connexion Postgres (prod / cloud). | _vide_ |
+| `DATABASE_URL_TEST` | Chaine de connexion utilisee par `sequelize.config.ts` pour les tests. | _vide_ |
+| `DB_SSL` | Active `ssl` en production (`true`/`false`). | _non defini_ |
+| `SEQ_LOG` | Active les logs SQL de Sequelize quand positionne a `true`. | `false` |
+| `REDIS_HOST`, `REDIS_PORT` | Acces Redis pour BullMQ. | `localhost`, `6379` |
+| `JWT_SECRET` | Cle de signature JWT. | `123` (a remplacer) |
+| `JWT_EXPIRES` | Duree de validite des tokens (`7d` par defaut dans `AuthModule`). | `7d` |
+| `JWT_EXPIRATION` | Valeur utilisee par certains scripts/tests pour l''expiration (fallback en secondes). | `3600s` |
 
-```bash
-# development
-$ npm run start
+Variables specifiques aux tests (`.env.test`) :
+| Variable | Description | Valeur par defaut |
+| --- | --- | --- |
+| `TEST_DB_HOST`, `TEST_DB_PORT` | Hote et port Postgres de test. | `localhost`, `5433` |
+| `TEST_DB_USER`, `TEST_DB_PASS`, `TEST_DB_NAME` | Identifiants de la base de tests. | `test_user`, `test_pass`, `mainfix_test` |
 
-# watch mode
-$ npm run start:dev
+## Gestion de la base de donnees
+- Les migrations Sequelize sont stockees dans `migrations/` (ex. `20250914095502-init_mainfix.js`) et couvrent la creation de l''ensemble du modele relationnel (entreprises, equipes, catalogues, tickets, SLA, couts, rapports, etc.).
+- Executer / annuler des migrations :
+  ```bash
+  npm run db:migrate
+  npm run db:migrate:undo       # annule la derniere migration
+  npm run db:migrate:undo -- --name <migration.js>
+  ```
+- Migrations en environnement de test : `npm run db:test:migrate`, puis `npm run db:test:reset` pour reinitialiser la base.
+- Seeders : l''infrastructure est prete (`npm run db:seed` / `npm run db:test:seed`), ajouter vos fichiers dans `seeders/`.
 
-# production mode
-$ npm run start:prod
-```
+## Scripts npm utiles
+| Script | Description |
+| --- | --- |
+| `start`, `start:dev`, `start:prod` | Demarrage standard, mode watch et execution depuis `dist`. |
+| `build` | Compilation TypeScript -> `dist/`. |
+| `lint` | ESLint + Prettier (`eslint.config.mjs`). |
+| `format` | Formatage Prettier (src & tests). |
+| `test`, `test:watch`, `test:cov` | Tests unitaires avec Jest. |
+| `test:e2e`, `test:e2e:watch` | Tests end-to-end (`test/jest-e2e.json`, bootstrap via `test/setup-e2e.ts`). |
+| `test:db:reset`, `test:with-db` | Orchestration automatisee des migrations/seeds de test avant Jest. |
+| `db:*` | Commandes Sequelize CLI (migrations/seeders pour dev & test). |
 
-## Run tests
+## Tests
+- **Unitaires** : services majeurs (catalogue, contrats, tickets, couts, rapports, taxonomie, utilisateurs) sont couverts dans `test/*.spec.ts`.
+- **End-to-end** : `test/users.e2e-spec.ts` et `test/app.e2e-spec.ts` demarrent un module Nest complet ; la configuration charge `.env.test` et logge la configuration Postgres pour controle.
+- **Preparation** : utiliser `docker compose up -d postgres_test` ou un serveur Postgres local exposant `5433`.
+- Les tests utilisent la meme logique d''authentification ; prevoir des fixtures / seeds pour manipuler des `admin_scopes` coherents.
 
-```bash
-# unit tests
-$ npm run test
+## Authentification & autorisations
+- `POST /api/auth/register` : creation d''un utilisateur occupant (hash Bcrypt, role `occupant`).
+- `POST /api/auth/login` : authentification par email + mot de passe, delivre un JWT (`access_token`) et un payload utilisateur minimal.
+- `GET /api/auth/me` : requiert `JwtAuthGuard`, retourne l''acteur courant injecte en requete (`req.actor`).
+- Guards personnalises :
+  - `JwtAuthGuard` (charge l''acteur via `AuthActorService` et attache les scopes admin).
+  - `RequireAdminRoleGuard` (impose `role === 'admin'`).
+  - `RequireAdminScopeGuard` + decorateur `@AdminScope(...)` (verifie la portee sur une entreprise / site / batiment via `AdminScopeEvaluatorService`).
+- Donnees d''admin scope stockees dans `admin_scopes` (modele `AdminScope`) avec hierarchie `platform > company > site > building`.
 
-# e2e tests
-$ npm run test:e2e
+## Domaines fonctionnels principaux (routes prefixees par `/api`)
+### Referentiel & catalogue
+- **Entreprises** (`CompaniesModule`) : `GET/POST/PATCH/DELETE /companies`.
+- **Utilisateurs & equipes** (`DirectoryModule`, `UsersModule`) : gestion CRUD `users`, desactivation logique, jointures avec `companies` et `admin_scopes`.
+- **Sites, batiments, localisations, assets** (`CatalogModule`) : `POST/GET/DELETE` sur `/sites`, `/buildings`, `/locations`, `/assets` avec filtres `companyId`.
+- **Taxonomie & competences** (`TaxonomyModule`) : `POST/GET/DELETE /categories` et `/skills` pour qualifier les tickets.
 
-# test coverage
-$ npm run test:cov
-```
+### Cycle de vie des tickets
+- **Tickets** (`TicketsModule`) : creation et consultation detaillee (`getWithTimeline`) via `POST /tickets`, `GET /tickets/:id`, filtrage par `siteId` et `status`.
+- **Timeline** : evenements, commentaires, pieces jointes et liens de tickets charges en parallele (`TicketEvent`, `TicketComment`, `TicketAttachment`, `TicketLink`).
+- **Routes imbriquees** :
+  - `tickets/:id/approvals` (`ApprovalsModule`) pour la validation multi-niveaux.
+  - `tickets/:id/costs` (`CostModule`) pour les couts & pieces (`TicketCost`, `TicketPart`).
+  - `tickets/:id/surveys` (`SatisfactionModule`) pour les enquetes de satisfaction post-incident.
 
-## Deployment
+### Contrats, routage & SLA
+- **Contrats & versions** (`ContractsModule`) : `POST/GET/DELETE /contracts`, associations aux sites et snapshots.
+- **Routage** (`RoutingModule`) : `POST/GET/DELETE /routing_rules` pour aiguiller les tickets selon les contrats actifs.
+- **SLA** (`SlaModule`) : modeles `SlaTarget` & `SlaBreach` disponibles pour calculer les delais d''accuse/resolution.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Confort, bien-etre & reporting
+- **Indicateurs de confort** (`ComfortModule`) : `POST /comfort_indicators`, `GET /comfort_indicators?location_id=`.
+- **Scores de bien-etre** (`WellBeingModule`) : `GET /well_being_scores?site_id=`.
+- **Rapports RSE** (`ReportsModule`) : `POST /rse_reports` (DTO `CreateRseReportDto`) pour consolider tickets fermes et moyenne de satisfaction par entreprise.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Modules transverses
+- `AttachmentsModule`, `CommentsModule`, `CalendarModule`, `CompetencyModule` : services utilitaires prets a etre exposes.
+- Types Express personnalises (`src/types/express.d.ts`) pour typer `req.actor`.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+## Conventions & qualite
+- ESLint + Prettier : executer `npm run lint` et `npm run format` avant commit. Les regles specifiques gerent la compatibilite Windows (CRLF) et tolerent certains `any` controles.
+- DTO valides automatiquement grace au `ValidationPipe` global (`whitelist`, `transform`).
+- Les modeles Sequelize utilisent `underscored` et `timestamps` coherents pour assurer la conformite avec les migrations.
+- Logger Nest (`bufferLogs`, niveaux complets) actif au demarrage : surveiller la console pour les diagnostics.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Deploiement
+- Construire : `npm run build`.
+- Lancer en production : `NODE_ENV=production npm run start:prod` (necessite `DATABASE_URL` et `JWT_SECRET` configures).
+- Activer `DB_SSL=true` pour une base managee necessitant TLS.
+- Prevoir un Redis accessible si des workers BullMQ sont ajoutes.
 
-## Resources
+## Ressources utiles
+- [Documentation NestJS](https://docs.nestjs.com)
+- [Sequelize + sequelize-typescript](https://docs.nestjs.com/recipes/sql-sequelize)
+- [BullMQ](https://docs.bullmq.io/) pour la mise en place future de workers
+- [Jest](https://jestjs.io/) & [Supertest](https://www.npmjs.com/package/supertest) pour l''outillage de tests
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+> Astuce : gardez `docker compose up -d postgres_dev postgres_test redis` actif pour developper, lancer les tests E2E et preparer les futures taches BullMQ sans reconfiguration.
 
-## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

@@ -24,7 +24,7 @@ export class User extends Model<User> {
   @Column({ field: 'company_id', type: DataType.UUID })
   companyId!: string;
 
-  @Column({ type: DataType.STRING, allowNull: false })
+  @Column({ field: 'passwordHash', type: DataType.STRING, allowNull: false })
   declare passwordHash: string;
 
   @AllowNull(false)
@@ -33,7 +33,7 @@ export class User extends Model<User> {
   @Column({ type: DataType.CITEXT }) // si CITEXT indispo en local, remplace par STRING
   email!: string;
 
-  @Column({ type: DataType.STRING, allowNull: true })
+  @Column({ field: 'site_id', type: DataType.UUID, allowNull: true })
   declare siteId?: string;
 
   @AllowNull(false)
@@ -50,7 +50,7 @@ export class User extends Model<User> {
       'admin',
     ),
   })
-  role!: 'occupant' | 'maintainer' | 'manager' | 'approver' | 'admin';
+  role!: 'occupant' | 'maintainer' | 'manager' | 'approver' | 'admin'; //
 
   @Default(true)
   @Column({ type: DataType.BOOLEAN })

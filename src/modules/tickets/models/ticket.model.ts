@@ -4,17 +4,17 @@ import {
   Model,
   DataType,
   Default,
-  PrimaryKey,
-  AllowNull,
   ForeignKey,
+  AllowNull,
   BelongsTo,
   HasMany,
+  PrimaryKey,
 } from 'sequelize-typescript';
 import { Company } from '../../companies/company.model';
 import { Site } from '../../catalog/models/site.model';
 import { Building } from '../../catalog/models/buildings.model';
 import { Location } from '../../catalog/models/location.model';
-import { Category } from '../../taxonomy/controllers/services/dto/models/category.model';
+import { Category } from '../../taxonomy/models/category.model';
 import { Asset } from '../../catalog/models/asset.model';
 import { User } from '../../directory/models/user.model';
 import { Team } from '../../directory/models/team.model';
@@ -38,6 +38,10 @@ export class Ticket extends Model<Ticket> {
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
   declare id: string;
+
+  @AllowNull(false)
+  @Column({ type: DataType.STRING(32) })
+  declare number: string;
 
   @AllowNull(false)
   @ForeignKey(() => Company)
@@ -91,6 +95,9 @@ export class Ticket extends Model<Ticket> {
   @BelongsTo(() => Team, 'assigneeTeamId')
   assigneeTeam?: Team;
 
+  @Column({ field: 'assigned_at', type: DataType.DATE })
+  assignedAt?: Date;
+
   @Column(DataType.TEXT)
   ergonomie?: string;
 
@@ -99,30 +106,31 @@ export class Ticket extends Model<Ticket> {
   priority!: 'P1' | 'P2' | 'P3';
 
   @AllowNull(false)
-  @Default('NEW')
+  @Default('open')
   @Column({
     type: DataType.ENUM(
-      'NEW',
-      'TRI_AUTO',
-      'ASSIGNÉ',
-      'EN_COURS',
-      'EN_ATTENTE',
-      'RÉSOLU',
-      'VALIDÉ',
-      'CLOS',
-      'BACKLOG',
+      'draft', // Temporarily disabled
+      'open',
+      'assigned',
+      'in_progress',
+      'awaiting_confirmation',
+      'resolved',
+      'closed',
+      'cancelled',
     ),
   })
   status!:
-    | 'NEW'
-    | 'TRI_AUTO'
-    | 'ASSIGNÉ'
-    | 'EN_COURS'
-    | 'EN_ATTENTE'
-    | 'RÉSOLU'
-    | 'VALIDÉ'
-    | 'CLOS'
-    | 'BACKLOG';
+    | 'draft' // temporarily disabled
+    | 'open'
+    | 'assigned'
+    | 'in_progress'
+    | 'awaiting_confirmation'
+    | 'resolved'
+    | 'closed'
+    | 'cancelled';
+
+  @Column({ type: DataType.DATE, field: 'status_updated_at' })
+  declare statusUpdatedAt: Date;
 
   @Column(DataType.TEXT)
   title?: string;
