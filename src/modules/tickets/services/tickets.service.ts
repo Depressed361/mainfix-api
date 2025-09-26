@@ -68,82 +68,94 @@ export class TicketsService {
   }
 
   // tickets.service.ts (extrait)
-  /*private async deriveSiteIdFromDto(dto: {
-    siteId?: string;
-    buildingId?: string;
-    locationId?: string;
-    assetId?: string;
+  private async deriveSiteIdFromDto(dto: {
+    siteId?: string | null;
+    buildingId?: string | null;
+    locationId?: string | null;
+    assetId?: string | null;
   }): Promise<string> {
     if (dto.siteId) return dto.siteId;
 
     if (dto.buildingId) {
-      const b = await this.buildingModel.findByPk(dto.buildingId, {
-        attributes: ['site_id'],
-      });
-      if (!b) throw new BadRequestException('buildingId inconnu');
-      return b.site_id;
+      const building = await this.buildingModel.findByPk(dto.buildingId);
+      if (!building) {
+        throw new BadRequestException('Unknown buildingId');
+      }
+      return building.getDataValue('siteId');
     }
 
     if (dto.locationId) {
-      const loc = await this.locationModel.findByPk(dto.locationId, {
-        attributes: ['building_id'],
-      });
-      if (!loc) throw new BadRequestException('locationId inconnu');
-      const b = await this.buildingModel.findByPk(loc.building_id, {
-        attributes: ['site_id'],
-      });
-      return b.site_id;
+      const location = await this.locationModel.findByPk(dto.locationId);
+      if (!location) {
+        throw new BadRequestException('Unknown locationId');
+      }
+      const buildingId = location.getDataValue('buildingId');
+      if (!buildingId) {
+        throw new BadRequestException(
+          'Location is not linked to a known building',
+        );
+      }
+      const building = await this.buildingModel.findByPk(buildingId);
+      if (!building) {
+        throw new BadRequestException(
+          'Location is not linked to a known building',
+        );
+      }
+      return building.getDataValue('siteId');
     }
 
     if (dto.assetId) {
-      const asset = await this.assetModel.findByPk(dto.assetId, {
-        attributes: ['location_id'],
-      });
-      if (!asset) throw new BadRequestException('assetId inconnu');
-      if (!asset.location_id) {
+      const asset = await this.assetModel.findByPk(dto.assetId);
+      if (!asset) {
+        throw new BadRequestException('Unknown assetId');
+      }
+      const locationId = asset.getDataValue('locationId');
+      if (!locationId) {
         throw new BadRequestException(
-          'Cet asset n’est pas localisé → indiquer siteId/buildingId/locationId',
+          'Asset is not linked to a location. Provide siteId, buildingId or locationId.',
         );
       }
-      const loc = await this.locationModel.findByPk(asset.location_id, {
-        attributes: ['building_id'],
-      });
-      const b = await this.buildingModel.findByPk(loc.building_id, {
-        attributes: ['site_id'],
-      });
-      return b.site_id;
+      const location = await this.locationModel.findByPk(locationId);
+      if (!location) {
+        throw new BadRequestException(
+          'Asset location is not linked to a building',
+        );
+      }
+      const buildingId = location.getDataValue('buildingId');
+      if (!buildingId) {
+        throw new BadRequestException(
+          'Asset location is not linked to a building',
+        );
+      }
+      const building = await this.buildingModel.findByPk(buildingId);
+      if (!building) {
+        throw new BadRequestException('Asset building is unknown');
+      }
+      return building.getDataValue('siteId');
+    }
+
+    if (dto.siteId) {
+      return dto.siteId;
     }
 
     throw new BadRequestException(
-      'Fournir siteId ou l’un de (buildingId, locationId, assetId)',
+      'Provide siteId or one of (buildingId, locationId, assetId)',
     );
   }
 
-  async create(dto: CreateTicketDto, actor: Actor) {
-    // 1) dérive siteId AVANT l’insert
-    const siteId = await this.deriveSiteIdFromDto(dto);
-
-    // 2) crée le ticket avec siteId garanti (tickets.site_id est NOT NULL)
-    const ticket = await this.ticketModel.create({
-      ...dto,
-      siteId,
-      reporterId: actor.userId,
-    });
-
-    // 3) lance l’auto-assignation avec un ctx NON vide
-    await this.assignment.chooseBestTeam({
+  private buildAssignmentContext(ticket: Ticket) {
+    return {
       ticketId: ticket.id,
-      siteId, // passer explicitement
-      buildingId: dto.buildingId,
-      locationId: dto.locationId,
-      assetId: dto.assetId,
-      categoryId: dto.categoryId,
-      priority: dto.priority,
-    });
-
-    return ticket;
+      siteId: ticket.getDataValue('siteId') ?? undefined,
+      categoryId: ticket.getDataValue('categoryId'),
+      buildingId: ticket.getDataValue('buildingId') ?? null,
+      locationId: ticket.getDataValue('locationId') ?? null,
+      assetId: ticket.getDataValue('assetId') ?? null,
+      contractId: ticket.getDataValue('contractId') ?? null,
+      contractVersion: ticket.getDataValue('contractVersion') ?? null,
+    } satisfies TicketAssignmentContext;
   }
-*/
+
   private ensureActorCanAccess(
     actor: AuthenticatedActor | undefined,
     context: { companyId: string; siteId: string; buildingId?: string | null },
@@ -202,9 +214,15 @@ export class TicketsService {
   }
 
   async create(dto: CreateTicketDto, actor?: AuthenticatedActor) {
+    const resolvedSiteId = await this.deriveSiteIdFromDto({
+      siteId: dto.siteId,
+      buildingId: dto.buildingId,
+      locationId: dto.locationId,
+      assetId: dto.assetId,
+    });
     this.ensureActorCanAccess(actor, {
       companyId: dto.companyId,
-      siteId: dto.siteId,
+      siteId: resolvedSiteId,
       buildingId: dto.buildingId,
     });
 
@@ -220,6 +238,7 @@ export class TicketsService {
       const ticket = await this.ticketModel.create(
         {
           ...dto,
+          siteId: resolvedSiteId,
           status,
           number,
           statusUpdatedAt: now,
@@ -246,17 +265,8 @@ export class TicketsService {
               manual: true,
             },
           );
-        } else if (dto.autoAssign !== false) {
-          const ctx = {
-            ticketId: ticket.id,
-            siteId: ticket.siteId ?? ,
-            categoryId: ticket.categoryId,
-            buildingId: ticket.buildingId ?? null,
-            locationId: ticket.locationId ?? null,
-            assetId: ticket.assetId ?? null,
-            contractId: ticket.contractId ?? null,
-            contractVersion: ticket.contractVersion ?? null,
-          };
+        } else if (dto.autoAssign === true) {
+          const ctx = this.buildAssignmentContext(ticket);
           const teamId = await this.assignmentService.chooseBestTeam(
             ctx,
             transaction,
@@ -364,27 +374,32 @@ export class TicketsService {
       buildingId: ticket.buildingId ?? ticket.getDataValue('buildingId'),
     });
 
-    if (ticket.status === dto.status) {
+    const currentStatus = ticket.getDataValue('status');
+
+    if (currentStatus === dto.status) {
       return ticket;
     }
 
-    this.assertTransition(ticket.status, dto.status);
+    this.assertTransition(currentStatus, dto.status);
 
     const transaction = await this.sequelize().transaction();
     try {
-      const previousStatus = ticket.status;
-      ticket.status = dto.status as Ticket['status'];
-      ticket.statusUpdatedAt = new Date();
+      const previousStatus = currentStatus;
+      ticket.setDataValue('status', dto.status as Ticket['status']);
+      ticket.setDataValue('statusUpdatedAt', new Date());
 
       if (dto.status === 'resolved') {
-        ticket.resolvedAt = new Date();
+        ticket.setDataValue('resolvedAt', new Date());
       }
       if (previousStatus === 'resolved' && dto.status !== 'resolved') {
-        ticket.resolvedAt = undefined;
+        ticket.setDataValue('resolvedAt', null);
       }
 
       if (dto.status === 'cancelled') {
-        ticket.assignedAt = ticket.assignedAt ?? undefined;
+        ticket.setDataValue(
+          'assignedAt',
+          ticket.getDataValue('assignedAt') ?? undefined,
+        );
       }
 
       await ticket.save({ transaction });
@@ -429,7 +444,8 @@ export class TicketsService {
         throw new BadRequestException('Team is not eligible for this ticket');
       }
     } else if (dto.auto !== false) {
-      const chosenTeamId = await this.assignmentService.chooseBestTeam(ticket);
+      const chosenTeamId =
+        await this.assignmentService.chooseBestTeam(assignmentCtx);
       if (!chosenTeamId) {
         this.logger.warn(`No eligible team found for ticket ${ticket.id}`);
         return ticket;
@@ -457,8 +473,8 @@ export class TicketsService {
     transaction?: Transaction,
     meta?: { manual?: boolean; auto?: boolean },
   ) {
-    const previousTeam = ticket.assigneeTeamId;
-    const previousStatus = ticket.status;
+    const previousTeam = ticket.getDataValue('assigneeTeamId');
+    const previousStatus = ticket.getDataValue('status');
 
     ticket.assigneeTeamId = teamId;
     ticket.assignedAt = new Date();

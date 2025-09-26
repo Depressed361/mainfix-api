@@ -8,6 +8,7 @@ import { TicketAttachment } from './ticket-attachment.model';
 import { CompetencyMatrix } from '../competency/models/competency-matrix.model';
 import { ContractVersion } from '../contracts/models/contract-version.model';
 import { TicketsController } from './controllers/tickets.controller';
+import { Team } from '../directory/models/team.model';
 import {
   TicketCommentsController,
   TicketCommentsAdminController,
@@ -31,6 +32,7 @@ import { TicketAttachmentsService } from './services/ticket-attachments.service'
       TicketAttachment,
       CompetencyMatrix,
       ContractVersion,
+      Team,
     ]),
   ],
   controllers: [

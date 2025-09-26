@@ -3,7 +3,7 @@ import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 export class AssignTicketDto {
   @IsOptional()
   @IsUUID()
-  teamId?: string;
+  teamId!: string;
 
   @IsOptional()
   @IsBoolean()
