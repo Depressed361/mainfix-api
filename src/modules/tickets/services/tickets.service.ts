@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/sequelize';
-import { Transaction, Op } from 'sequelize';
+import { Transaction, Op, WhereOptions } from 'sequelize';
 import { randomUUID } from 'crypto';
 import { isUUID } from 'class-validator';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
@@ -18,8 +18,14 @@ import { Ticket } from '../models/ticket.model';
 import { TicketEvent } from '../models/ticket-event.model';
 import { TicketComment } from '../ticket-comment.model';
 import { TicketAttachment } from '../ticket-attachment.model';
-import { TicketAssignmentService } from './ticket-assignment.service';
+import {
+  TicketAssignmentService,
+  type TicketAssignmentContext,
+} from './ticket-assignment.service';
 import type { AuthenticatedActor } from '../../auth/auth-actor.types';
+import { Building } from '../../catalog/models/buildings.model';
+import { Location } from '../../catalog/models/location.model';
+import { Asset } from '../../catalog/models/asset.model';
 
 export type TicketStatus =
   | 'open'
@@ -57,6 +63,9 @@ export class TicketsService {
     @InjectModel(TicketAttachment)
     private readonly attachmentModel: typeof TicketAttachment,
     private readonly assignmentService: TicketAssignmentService,
+    @InjectModel(Building) private readonly buildingModel: typeof Building,
+    @InjectModel(Location) private readonly locationModel: typeof Location,
+    @InjectModel(Asset) private readonly assetModel: typeof Asset,
   ) {}
 
   private sequelize() {
@@ -146,14 +155,14 @@ export class TicketsService {
   private buildAssignmentContext(ticket: Ticket) {
     return {
       ticketId: ticket.id,
-      siteId: ticket.getDataValue('siteId') ?? undefined,
-      categoryId: ticket.getDataValue('categoryId'),
-      buildingId: ticket.getDataValue('buildingId') ?? null,
-      locationId: ticket.getDataValue('locationId') ?? null,
-      assetId: ticket.getDataValue('assetId') ?? null,
-      contractId: ticket.getDataValue('contractId') ?? null,
-      contractVersion: ticket.getDataValue('contractVersion') ?? null,
-    } satisfies TicketAssignmentContext;
+      siteId: ticket.siteId ?? undefined,
+      categoryId: ticket.categoryId,
+      buildingId: ticket.buildingId ?? null,
+      locationId: ticket.locationId ?? null,
+      assetId: ticket.assetId ?? null,
+      contractId: ticket.contractId ?? null,
+      contractVersion: ticket.contractVersion ?? null,
+    };
   }
 
   private ensureActorCanAccess(
@@ -208,7 +217,7 @@ export class TicketsService {
           actorUserId && isUUID(actorUserId) ? actorUserId : undefined,
         type,
         payload,
-      } as any,
+      },
       { transaction },
     );
   }
@@ -305,7 +314,7 @@ export class TicketsService {
   }
 
   async findAll(actor: AuthenticatedActor, filters: ListTicketsQueryDto) {
-    const where: any = {};
+    const where: WhereOptions = {};
 
     if (filters.companyId) where.companyId = filters.companyId;
     if (filters.siteId) where.siteId = filters.siteId;
@@ -323,7 +332,7 @@ export class TicketsService {
 
       const allowedBuildings = new Set<string>(actor.buildingScopeIds ?? []);
 
-      const scopeFilters: any[] = [];
+      const scopeFilters: WhereOptions[] = [];
       if (allowedCompanies.size > 0) {
         scopeFilters.push({
           companyId: { [Op.in]: Array.from(allowedCompanies) },
@@ -392,7 +401,7 @@ export class TicketsService {
         ticket.setDataValue('resolvedAt', new Date());
       }
       if (previousStatus === 'resolved' && dto.status !== 'resolved') {
-        ticket.setDataValue('resolvedAt', null);
+        const scopeFilters: WhereOptions[] = [];
       }
 
       if (dto.status === 'cancelled') {
@@ -434,7 +443,7 @@ export class TicketsService {
       buildingId: ticket.buildingId ?? ticket.getDataValue('buildingId'),
     });
 
-    let teamId = dto.teamId;
+    let teamId: string | null = dto.teamId ?? null;
     if (teamId) {
       const eligible = await this.assignmentService.ensureTeamEligibility(
         ticket,
@@ -444,6 +453,7 @@ export class TicketsService {
         throw new BadRequestException('Team is not eligible for this ticket');
       }
     } else if (dto.auto !== false) {
+      const assignmentCtx = this.buildAssignmentContext(ticket);
       const chosenTeamId =
         await this.assignmentService.chooseBestTeam(assignmentCtx);
       if (!chosenTeamId) {
@@ -453,6 +463,9 @@ export class TicketsService {
       teamId = chosenTeamId;
     } else {
       throw new BadRequestException('teamId must be provided when auto=false');
+    }
+    if (!teamId) {
+      throw new BadRequestException('Unable to determine assignee team');
     }
 
     await this.sequelize().transaction(async (transaction) => {
@@ -476,16 +489,16 @@ export class TicketsService {
     const previousTeam = ticket.getDataValue('assigneeTeamId');
     const previousStatus = ticket.getDataValue('status');
 
-    ticket.assigneeTeamId = teamId;
-    ticket.assignedAt = new Date();
+    ticket.setDataValue('assigneeTeamId', teamId);
+    ticket.setDataValue('assignedAt', new Date());
 
     let statusChanged = false;
-    if (['draft', 'open'].includes(ticket.status)) {
-      ticket.status = 'assigned';
+    if (['draft', 'open'].includes(ticket.getDataValue('status'))) {
+      ticket.setDataValue('status', 'assigned');
       statusChanged = true;
     }
     if (statusChanged) {
-      ticket.statusUpdatedAt = new Date();
+      ticket.setDataValue('statusUpdatedAt', new Date());
     }
 
     await ticket.save({ transaction });

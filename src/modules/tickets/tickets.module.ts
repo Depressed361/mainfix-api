@@ -21,6 +21,9 @@ import { TicketsService } from './services/tickets.service';
 import { TicketAssignmentService } from './services/ticket-assignment.service';
 import { TicketCommentsService } from './services/ticket-comments.service';
 import { TicketAttachmentsService } from './services/ticket-attachments.service';
+import { Building } from '../catalog/models/buildings.model';
+import { Location } from '../catalog/models/location.model';
+import { Asset } from '../catalog/models/asset.model';
 
 @Module({
   imports: [
@@ -33,6 +36,9 @@ import { TicketAttachmentsService } from './services/ticket-attachments.service'
       CompetencyMatrix,
       ContractVersion,
       Team,
+      Building,
+      Location,
+      Asset,
     ]),
   ],
   controllers: [
