@@ -7,7 +7,10 @@ import {
   Default,
   AllowNull,
   Unique,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
+import { Building } from './buildings.model';
 
 @Table({
   tableName: 'locations',
@@ -19,16 +22,20 @@ export class Location extends Model<Location> {
   @Column(DataType.UUID)
   declare id: string;
 
+  @ForeignKey(() => Building)
   @AllowNull(false)
-  @Unique('building_code')
+  @Unique('locations_building_code_unique')
   @Column({ field: 'building_id', type: DataType.UUID })
-  buildingId!: string;
+  declare buildingId: string;
+
+  @BelongsTo(() => Building)
+  declare building?: Building;
 
   @AllowNull(false)
-  @Unique('building_code')
-  @Column(DataType.TEXT)
-  code!: string;
+  @Unique('locations_building_code_unique')
+  @Column({ field: 'code', type: DataType.TEXT })
+  declare name: string;
 
   @Column(DataType.TEXT)
-  description?: string;
+  declare description?: string | null;
 }
