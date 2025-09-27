@@ -8,7 +8,17 @@ import { UpdateSite } from '../src/modules/catalog/sites/domain/use-cases/Update
 import { DeleteSite } from '../src/modules/catalog/sites/domain/use-cases/DeleteSite';
 import { SequelizeSiteRepository } from '../src/modules/catalog/sites/adapters/site.repository.sequelize';
 import type { SiteRepository } from '../src/modules/catalog/sites/domain/ports';
-import { BuildingsService } from '../src/modules/catalog/services/buildings.service';
+import { CreateBuilding } from '../src/modules/catalog/buildings/domain/use-cases/CreateBuilding';
+import { GetBuilding } from '../src/modules/catalog/buildings/domain/use-cases/GetBuilding';
+import { ListBuildings } from '../src/modules/catalog/buildings/domain/use-cases/ListBuildings';
+import { UpdateBuilding } from '../src/modules/catalog/buildings/domain/use-cases/UpdateBuilding';
+import { DeleteBuilding } from '../src/modules/catalog/buildings/domain/use-cases/DeleteBuilding';
+import { SequelizeBuildingRepository } from '../src/modules/catalog/buildings/adapters/building.repository.sequelize';
+import { SequelizeSiteGuard } from '../src/modules/catalog/buildings/adapters/site-guard.sequelize';
+import type {
+  BuildingRepository,
+  SiteGuard as BuildingSiteGuard,
+} from '../src/modules/catalog/buildings/domain/ports';
 import { LocationsService } from '../src/modules/catalog/services/locations.service';
 import { AssetsService } from '../src/modules/catalog/services/assets.service';
 import { Site } from '../src/modules/catalog/models/site.model';
@@ -96,7 +106,7 @@ describe('Catalog Services', () => {
         companyId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
       });
       expect(filtered.count).toBe(1);
-      expect(filtered.rows[0]!.code).toBe('PARIS');
+      expect(filtered.rows[0].code).toBe('PARIS');
     });
 
     it('returns site with buildings', async () => {
@@ -129,55 +139,163 @@ describe('Catalog Services', () => {
       const updated = await updateSite.exec(site.id, { name: 'Updated Name' });
       expect(updated.name).toBe('Updated Name');
 
-      const response = await deleteSite;
+      const response = await deleteSite.exec(site.id);
       expect(response).toEqual({ deleted: true });
-      await expect(
-        service.findOneWithBuildings(site.get('id') as string),
-      ).rejects.toThrow('Site not found');
+      await expect(getSite.exec(site.id)).rejects.toThrow('SITE_NOT_FOUND');
     });
   });
 
-  describe('BuildingsService', () => {
+  describe('Buildings use cases', () => {
     let moduleRef: TestingModule;
-    let service: BuildingsService;
+    let createBuilding: CreateBuilding;
+    let getBuilding: GetBuilding;
+    let listBuildings: ListBuildings;
+    let updateBuilding: UpdateBuilding;
+    let deleteBuilding: DeleteBuilding;
+    let siteModel: typeof Site;
+    let buildingModel: typeof Building;
 
     beforeAll(async () => {
       moduleRef = await Test.createTestingModule({
         imports: [
-          SqliteTestingModule([Building]),
-          SequelizeModule.forFeature([Building]),
+          SqliteTestingModule([Site, Building]),
+          SequelizeModule.forFeature([Site, Building]),
+        ],
+        providers: [
+          {
+            provide: 'BuildingRepository',
+            useClass: SequelizeBuildingRepository,
+          },
+          { provide: 'SiteGuard', useClass: SequelizeSiteGuard },
+          {
+            provide: CreateBuilding,
+            useFactory: (repo: BuildingRepository, guard: BuildingSiteGuard) =>
+              new CreateBuilding(repo, guard),
+            inject: ['BuildingRepository', 'SiteGuard'],
+          },
+          {
+            provide: GetBuilding,
+            useFactory: (repo: BuildingRepository) => new GetBuilding(repo),
+            inject: ['BuildingRepository'],
+          },
+          {
+            provide: ListBuildings,
+            useFactory: (repo: BuildingRepository) => new ListBuildings(repo),
+            inject: ['BuildingRepository'],
+          },
+          {
+            provide: UpdateBuilding,
+            useFactory: (repo: BuildingRepository, guard: BuildingSiteGuard) =>
+              new UpdateBuilding(repo, guard),
+            inject: ['BuildingRepository', 'SiteGuard'],
+          },
+          {
+            provide: DeleteBuilding,
+            useFactory: (repo: BuildingRepository) => new DeleteBuilding(repo),
+            inject: ['BuildingRepository'],
+          },
         ],
         providers: [BuildingsService],
       }).compile();
 
-      service = moduleRef.get(BuildingsService);
+      createBuilding = moduleRef.get(CreateBuilding);
+      getBuilding = moduleRef.get(GetBuilding);
+      listBuildings = moduleRef.get(ListBuildings);
+      updateBuilding = moduleRef.get(UpdateBuilding);
+      deleteBuilding = moduleRef.get(DeleteBuilding);
+      siteModel = moduleRef.get(getModelToken(Site));
+      buildingModel = moduleRef.get(getModelToken(Building));
     });
 
     afterAll(async () => {
       await moduleRef.close();
     });
 
-    it('creates and fetches a building', async () => {
-      const created = await service.create({
-        siteId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
-        code: 'T1',
-        name: 'Tower 1',
-      });
-      const found = await service.findOne(created.get('id'));
-      expect(found.get('name')).toBe('Tower 1');
+    beforeEach(async () => {
+      await buildingModel.destroy({ where: {} });
+      await siteModel.destroy({ where: {} });
     });
 
-    it('removes a building', async () => {
-      const toRemove = await service.create({
-        siteId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
-        code: 'TMP',
-        name: 'Temporary',
+    it('creates, lists and retrieves a building', async () => {
+      const site = await siteModel.create({
+        companyId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        code: 'SITE-A',
+        name: 'Site A',
+        timezone: 'Europe/Paris',
+      } as any);
+
+      const created = await createBuilding.exec({
+        siteId: site.getDataValue('id'),
+        name: ' Tower One ',
+        code: ' BLD-A ',
       });
-      const response = await service.remove(toRemove.get('id'));
-      expect(response).toEqual({ deleted: true });
-      await expect(service.findOne(toRemove.get('id'))).rejects.toThrow(
-        'Building not found',
+      c;
+      expect(created.name).toBe('Tower One');
+      expect(created.code).toBe('BLD-A');
+
+      const fetched = await getBuilding.exec(created.id);
+      expect(fetched.id).toBe(created.id);
+
+      const list = await listBuildings.exec({
+        siteId: site.getDataValue('id'),
+      });
+      expect(list.count).toBe(1);
+      expect(list.rows).toHaveLength(1);
+      expect(list.rows[0].id).toBe(created.id);
+    });
+
+    it('updates and deletes a building', async () => {
+      const site = await siteModel.create({
+        companyId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        code: 'SITE-B',
+        name: 'Site B',
+        timezone: 'Europe/Paris',
+      } as any);
+
+      const building = await createBuilding.exec({
+        siteId: site.getDataValue('id'),
+        name: 'Main',
+        code: 'MAIN',
+      });
+      const updated = await updateBuilding.exec(building.id, {
+        name: 'Main Updated',
+        code: 'MAIN-2',
+      });
+      expect(updated.name).toBe('Main Updated');
+      expect(updated.code).toBe('MAIN-2');
+
+      await deleteBuilding.exec(building.id);
+
+      await expect(getBuilding.exec(building.id)).rejects.toThrow(
+        'BUILDING_NOT_FOUND',
       );
+    });
+    it('prevents site reassignment', async () => {
+      const site = await siteModel.create({
+        companyId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        code: 'SITE-C',
+        name: 'Site C',
+        timezone: 'Europe/Paris',
+      } as any);
+
+      const otherSite = await siteModel.create({
+        companyId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+        code: 'SITE-D',
+        name: 'Site D',
+        timezone: 'Europe/Paris',
+      } as any);
+
+      const building = await createBuilding.exec({
+        siteId: site.getDataValue('id'),
+        name: 'Annex',
+        code: 'ANNEX',
+      });
+
+      await expect(
+        updateBuilding.exec(building.id, {
+          siteId: otherSite.getDataValue('id'),
+        }),
+      ).rejects.toThrow('SITE_CHANGE_FORBIDDEN');
     });
   });
 

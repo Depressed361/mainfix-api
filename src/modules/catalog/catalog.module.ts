@@ -5,13 +5,6 @@ import { Building } from './models/buildings.model';
 import { Location } from './models/location.model';
 import { Asset } from './models/asset.model';
 
-import { BuildingsController } from './controllers/buildings.controller';
-import { LocationsController } from './controllers/locations.controller';
-import { AssetsController } from './controllers/assets.controller';
-
-import { BuildingsService } from './services/buildings.service';
-import { LocationsService } from './services/locations.service';
-import { AssetsService } from './services/assets.service';
 import { AuthModule } from '../auth/auth.module';
 import { SitesController } from './sites/infra/sites.controller';
 import { SequelizeSiteRepository } from './sites/adapters/site.repository.sequelize';
@@ -21,6 +14,18 @@ import { ListSites } from './sites/domain/use-cases/ListSites';
 import { UpdateSite } from './sites/domain/use-cases/UpdateSite';
 import { DeleteSite } from './sites/domain/use-cases/DeleteSite';
 import type { SiteRepository } from './sites/domain/ports';
+import { BuildingsController } from './buildings/infra/buildings.controller';
+import { SequelizeBuildingRepository } from './buildings/adapters/building.repository.sequelize';
+import { SequelizeSiteGuard } from './buildings/adapters/site-guard.sequelize';
+import { CreateBuilding } from './buildings/domain/use-cases/CreateBuildings';
+import { GetBuilding } from './buildings/domain/use-cases/GetBuildings';
+import { ListBuildings } from './buildings/domain/use-cases/ListBuildings';
+import { UpdateBuilding } from './buildings/domain/use-cases/UpdateBuildings';
+import { DeleteBuilding } from './buildings/domain/use-cases/DeleteBuildings';
+import type {
+  BuildingRepository,
+  SiteGuard as BuildingSiteGuard,
+} from './buildings/domain/ports';
 
 const siteUseCaseProviders = [
   {
@@ -49,24 +54,49 @@ const siteUseCaseProviders = [
     inject: ['SiteRepository'],
   },
 ];
+const buildingUseCaseProviders = [
+  {
+    provide: CreateBuilding,
+    useFactory: (repo: BuildingRepository, guard: BuildingSiteGuard) =>
+      new CreateBuilding(repo, guard),
+    inject: ['BuildingRepository', 'SiteGuard'],
+  },
+  {
+    provide: GetBuilding,
+    useFactory: (repo: BuildingRepository) => new GetBuilding(repo),
+    inject: ['BuildingRepository'],
+  },
+  {
+    provide: ListBuildings,
+    useFactory: (repo: BuildingRepository) => new ListBuildings(repo),
+    inject: ['BuildingRepository'],
+  },
+  {
+    provide: UpdateBuilding,
+    useFactory: (repo: BuildingRepository, guard: BuildingSiteGuard) =>
+      new UpdateBuilding(repo, guard),
+    inject: ['BuildingRepository', 'SiteGuard'],
+  },
+  {
+    provide: DeleteBuilding,
+    useFactory: (repo: BuildingRepository) => new DeleteBuilding(repo),
+    inject: ['BuildingRepository'],
+  },
+];
 
 @Module({
   imports: [
     SequelizeModule.forFeature([Site, Building, Location, Asset]),
     AuthModule,
   ],
-  controllers: [
-    BuildingsController,
-    LocationsController,
-    AssetsController,
-    SitesController,
-  ],
+  controllers: [SitesController, BuildingsController],
   providers: [
     { provide: 'SiteRepository', useClass: SequelizeSiteRepository },
+    { provide: 'BuildingRepository', useClass: SequelizeBuildingRepository },
+    { provide: 'SiteGuard', useClass: SequelizeSiteGuard },
+
     ...siteUseCaseProviders,
-    BuildingsService,
-    LocationsService,
-    AssetsService,
+    ...buildingUseCaseProviders,
   ],
   exports: [SequelizeModule],
 })

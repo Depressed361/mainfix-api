@@ -27,7 +27,7 @@ export class SequelizeSiteRepository implements SiteRepository {
     if (!site) return null;
 
     const buildings = await Building.findAll({
-      where: { siteId: id } as any,
+      where: { siteId: id },
       order: [['code', 'ASC']],
     });
 
@@ -38,7 +38,7 @@ export class SequelizeSiteRepository implements SiteRepository {
   }
 
   async list(query: ListSitesQuery): Promise<ListSitesResult> {
-    const where: Record<string, any> = {};
+    const where: Record<string, any> & { [Op.or]?: any } = {};
 
     if (query.companyId) where.companyId = query.companyId;
     if (query.search) {
@@ -78,7 +78,7 @@ export class SequelizeSiteRepository implements SiteRepository {
   }
 
   async delete(id: SiteId): Promise<void> {
-    const deleted = await Site.destroy({ where: { id } as any });
+    const deleted = await Site.destroy({ where: { id } });
     if (!deleted) throw new Error('SITE_NOT_FOUND');
   }
 }

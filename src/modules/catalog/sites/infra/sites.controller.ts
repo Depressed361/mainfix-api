@@ -37,7 +37,10 @@ export class SitesController {
   @AdminScope({ type: 'company', param: 'companyId' })
   @Post()
   create(@Body() dto: CreateSiteDto) {
-    return this.createSiteUC.exec(dto);
+    return this.createSiteUC.exec({
+      ...dto,
+      timezone: dto.timezone?.trim() || 'Europe/Paris',
+    });
   }
 
   @AdminScope({ type: 'site', param: 'id' })
