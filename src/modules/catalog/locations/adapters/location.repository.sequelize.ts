@@ -3,14 +3,14 @@ import {
   LocationRepository,
   LocationDTO,
   ListLocationsQuery,
-} from '../doomain/ports';
+} from '../domain/ports';
 import { Location } from '../../models/location.model';
 import { locationToDTO, fromCreate } from './mappers';
 import { listLocationsBySite } from './read-models/location-list.readmodel.sequelize';
 
 export class SequelizeLocationRepository implements LocationRepository {
   async create(input: Omit<LocationDTO, 'id'>): Promise<LocationDTO> {
-    const row = await Location.create(fromCreate(input));
+    const row = await Location.create(fromCreate(input) as any);
     return locationToDTO(row);
   }
 

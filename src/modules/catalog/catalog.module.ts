@@ -26,7 +26,56 @@ import type {
   BuildingRepository,
   SiteGuard as BuildingSiteGuard,
 } from './buildings/domain/ports';
+import { AssetsController } from './assets/infra/assets.controller';
+import { SequelizeAssetRepository } from './assets/adapters/asset.repository.sequelize';
+import { SequelizeLocationGuard } from './assets/adapters/location-guard.sequelize';
+import { SequelizeUniqueCodeGuard } from './assets/adapters/unique-code.guard.sequelize';
+import { CreateAsset } from './assets/domain/use-cases/CreateAsset';
+import { GetAsset } from './assets/domain/use-cases/GetAsset';
+import { ListAssets } from './assets/domain/use-cases/ListAssets';
+import { UpdateAsset } from './assets/domain/use-cases/UpdateAsset';
+import { DeleteAsset } from './assets/domain/use-cases/DeleteAsset';
+import type {
+  AssetRepository,
+  LocationGuard,
+  UniqueCodeGuard,
+} from './assets/domain/ports';
 
+const assetUseCaseProviders = [
+  {
+    provide: CreateAsset,
+    useFactory: (
+      repo: AssetRepository,
+      locGuard: LocationGuard,
+      uniqGuard: UniqueCodeGuard,
+    ) => new CreateAsset(repo, locGuard, uniqGuard),
+    inject: ['AssetRepository', 'LocationGuard', 'UniqueCodeGuard'],
+  },
+  {
+    provide: GetAsset,
+    useFactory: (repo: AssetRepository) => new GetAsset(repo),
+    inject: ['AssetRepository'],
+  },
+  {
+    provide: ListAssets,
+    useFactory: (repo: AssetRepository) => new ListAssets(repo),
+    inject: ['AssetRepository'],
+  },
+  {
+    provide: UpdateAsset,
+    useFactory: (
+      repo: AssetRepository,
+      locGuard: LocationGuard,
+      uniqGuard: UniqueCodeGuard,
+    ) => new UpdateAsset(repo, locGuard, uniqGuard),
+    inject: ['AssetRepository', 'LocationGuard', 'UniqueCodeGuard'],
+  },
+  {
+    provide: DeleteAsset,
+    useFactory: (repo: AssetRepository) => new DeleteAsset(repo),
+    inject: ['AssetRepository'],
+  },
+];
 const siteUseCaseProviders = [
   {
     provide: CreateSite,
@@ -89,12 +138,15 @@ const buildingUseCaseProviders = [
     SequelizeModule.forFeature([Site, Building, Location, Asset]),
     AuthModule,
   ],
-  controllers: [SitesController, BuildingsController],
+  controllers: [SitesController, BuildingsController, AssetsController],
   providers: [
     { provide: 'SiteRepository', useClass: SequelizeSiteRepository },
     { provide: 'BuildingRepository', useClass: SequelizeBuildingRepository },
     { provide: 'SiteGuard', useClass: SequelizeSiteGuard },
-
+    { provide: 'AssetRepository', useClass: SequelizeAssetRepository },
+    { provide: 'LocationGuard', useClass: SequelizeLocationGuard },
+    { provide: 'UniqueCodeGuard', useClass: SequelizeUniqueCodeGuard },
+    ...assetUseCaseProviders,
     ...siteUseCaseProviders,
     ...buildingUseCaseProviders,
   ],

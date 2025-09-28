@@ -8,7 +8,13 @@ export class SequelizeBuildingGuard implements BuildingGuard {
   }
 
   ensureLocationBelongsToBuilding(loc: LocationDTO, buildingId?: string): void {
-    if (buildingId && loc.buildingId !== buildingId) {
+    if (
+      buildingId &&
+      loc &&
+      typeof loc === 'object' &&
+      'buildingId' in loc &&
+      loc.buildingId !== buildingId
+    ) {
       throw new Error('LOCATION_NOT_IN_BUILDING');
     }
   }
