@@ -5,12 +5,16 @@ import {
   DataType,
   PrimaryKey,
 } from 'sequelize-typescript';
+import { InferAttributes, InferCreationAttributes } from 'sequelize';
 
 @Table({
   tableName: 'category_skills',
   timestamps: false,
 })
-export class CategorySkill extends Model<CategorySkill> {
+export class CategorySkill extends Model<
+  InferAttributes<CategorySkill>,
+  InferCreationAttributes<CategorySkill>
+> {
   @PrimaryKey
   @Column({ field: 'category_id', type: DataType.UUID })
   declare categoryId: string;

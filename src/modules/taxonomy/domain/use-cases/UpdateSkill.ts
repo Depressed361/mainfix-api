@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Skill } from '../entities/Skill';
 import { ConflictError, ForbiddenError, NotFoundError } from '../errors';
-import { SkillRepository, SKILL_REPOSITORY } from '../ports';
+import type { SkillRepository } from '../ports';
+import { SKILL_REPOSITORY } from '../ports';
 
 export interface UpdateSkillInput {
   id: string;

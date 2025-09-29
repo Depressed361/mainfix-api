@@ -1,9 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CrossCompanyViolationError, NotFoundError } from '../errors';
-import {
+import type {
   CategoryRepository,
   CategorySkillRepository,
   SkillRepository,
+} from '../ports';
+import {
   CATEGORY_REPOSITORY,
   CATEGORY_SKILL_REPOSITORY,
   SKILL_REPOSITORY,

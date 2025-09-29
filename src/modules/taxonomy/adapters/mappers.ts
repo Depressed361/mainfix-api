@@ -10,8 +10,8 @@ export const mapCategory = (model: CategoryModel): Category => ({
   companyId: model.companyId,
   key: model.key,
   label: model.label,
-  createdAt: model.getDataValue('createdAt') ?? undefined,
-  updatedAt: model.getDataValue('updatedAt') ?? undefined,
+  createdAt: model.getDataValue('createdAt'),
+  updatedAt: model.getDataValue('updatedAt'),
 });
 
 export const mapSkill = (model: SkillModel): Skill => ({
@@ -19,8 +19,8 @@ export const mapSkill = (model: SkillModel): Skill => ({
   companyId: model.companyId,
   key: model.key,
   label: model.label,
-  createdAt: model.getDataValue('createdAt') ?? undefined,
-  updatedAt: model.getDataValue('updatedAt') ?? undefined,
+  createdAt: model.getDataValue('createdAt'),
+  updatedAt: model.getDataValue('updatedAt'),
 });
 
 export const mapCategorySkill = (model: CategorySkillModel): CategorySkill => ({

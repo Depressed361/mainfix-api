@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Category } from '../entities/Category';
 import { ConflictError, ForbiddenError, NotFoundError } from '../errors';
-import { CategoryRepository, CATEGORY_REPOSITORY } from '../ports';
+import type { CategoryRepository } from '../ports';
+import { CATEGORY_REPOSITORY } from '../ports';
 
 export interface UpdateCategoryInput {
   id: string;

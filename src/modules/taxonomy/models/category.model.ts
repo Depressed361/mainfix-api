@@ -8,16 +8,24 @@ import {
   AllowNull,
   Unique,
 } from 'sequelize-typescript';
+import type {
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from 'sequelize';
 
 @Table({
   tableName: 'categories',
   timestamps: false,
 })
-export class Category extends Model<Category> {
+export class Category extends Model<
+  InferAttributes<Category>,
+  InferCreationAttributes<Category>
+> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  declare id: string;
+  declare id: CreationOptional<string>;
 
   @AllowNull(false)
   @Unique('company_key')
@@ -32,4 +40,7 @@ export class Category extends Model<Category> {
   @AllowNull(false)
   @Column(DataType.TEXT)
   declare label: string;
+
+  declare createdAt?: CreationOptional<Date>;
+  declare updatedAt?: CreationOptional<Date>;
 }
