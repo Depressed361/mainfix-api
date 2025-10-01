@@ -26,5 +26,5 @@ export const mapSkill = (model: SkillModel): Skill => ({
 export const mapCategorySkill = (model: CategorySkillModel): CategorySkill => ({
   categoryId: model.categoryId,
   skillId: model.skillId,
-  linkedAt: model.getDataValue('createdAt') ?? undefined,
+  linkedAt: model.getDataValue('createdAt') as Date,
 });

@@ -13,6 +13,7 @@ import * as dotenv from 'dotenv';
 import { AdminScope } from '../src/modules/directory/models/admin-scope.model';
 import type { AuthenticatedActor } from '../src/modules/auth/auth-actor.types';
 import { JwtAuthGuard } from '../src/modules/auth/jwt.guard';
+import { TOKENS as ROUTING_TOKENS } from '../src/modules/routing/domain/ports';
 import { RequireAdminRoleGuard } from '../src/modules/auth/guards/require-admin-role.guard';
 import { RequireAdminScopeGuard } from '../src/modules/auth/guards/require-admin-scope.guard';
 import { ScopesGuard } from '../src/modules/auth/guards/scopes.guard';
@@ -161,6 +162,15 @@ export async function createE2EApp(): Promise<INestApplication> {
     .useClass(AllowGuard)
     .overrideGuard(ScopesGuard)
     .useClass(AllowGuard)
+    // Prevent Routing module repository from requiring DB when not under test
+    .overrideProvider(ROUTING_TOKENS.RoutingRuleRepository)
+    .useValue({
+      create: async (..._args: any[]) => ({ id: 'r-1' }),
+      update: async (..._args: any[]) => ({ id: 'r-1' }),
+      deleteById: async () => {},
+      findById: async () => null,
+      listByContractVersion: async () => [],
+    })
     .compile();
 
   const app = moduleRef.createNestApplication();

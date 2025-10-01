@@ -36,6 +36,7 @@ import { ScopesGuard } from './guards/scopes.guard';
   exports: [
     JwtAuthGuard,
     AuthActorService,
+    AdminScopeEvaluatorService,
     RequireAdminRoleGuard,
     RequireAdminScopeGuard,
     ScopesGuard,

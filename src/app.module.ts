@@ -6,7 +6,8 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { TicketsModule } from './modules/tickets/tickets.module';
+
+import { TicketsModuleV2 } from './modules/tickets/tickets.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
 import { DirectoryModule } from './modules/directory/directory.module';
@@ -18,8 +19,10 @@ import { SatisfactionModule } from './modules/satisfaction/satisfaction.module';
 import { ComfortModule } from './modules/comfort/comfort.module';
 import { WellBeingModule } from './modules/well-being/well-being.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { SlaModule } from './modules/sla/sla.module';
 import { CompetencyModule } from './modules/competency/competency.module';
+import { HolidayModule } from './modules/holiday-calendar/infra/holiday.module';
 
 @Module({
   imports: [
@@ -42,7 +45,8 @@ import { CompetencyModule } from './modules/competency/competency.module';
     UsersModule,
     ContractsModule,
     SlaModule,
-    TicketsModule,
+
+    TicketsModuleV2,
     ApprovalsModule,
     CostModule,
     SatisfactionModule,
@@ -50,7 +54,9 @@ import { CompetencyModule } from './modules/competency/competency.module';
     WellBeingModule,
     RoutingModule,
     ReportsModule,
+    AttachmentsModule,
     CompetencyModule,
+    HolidayModule,
     AuthModule,
   ],
   controllers: [AppController],
