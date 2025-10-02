@@ -1,8 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CreateContractVersionDto } from '../dto/create-contract-version.dto';
 import { ContractVersionsService } from '../services/contract-versions.service';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { RequireAdminRoleGuard } from '../../auth/guards/require-admin-role.guard';
+import { ScopesGuard } from '../../auth/guards/scopes.guard';
+import { CompanyScopeGuard } from '../../auth/guards/company-scope.guard';
 
 @Controller('contracts/:id/versions')
+@UseGuards(JwtAuthGuard, RequireAdminRoleGuard, ScopesGuard, CompanyScopeGuard)
 export class ContractVersionsController {
   constructor(private readonly versions: ContractVersionsService) {}
 
@@ -18,6 +23,7 @@ export class ContractVersionsController {
 }
 
 @Controller('contract_versions')
+@UseGuards(JwtAuthGuard, RequireAdminRoleGuard, ScopesGuard, CompanyScopeGuard)
 export class ContractVersionsAdminController {
   constructor(private readonly versions: ContractVersionsService) {}
 

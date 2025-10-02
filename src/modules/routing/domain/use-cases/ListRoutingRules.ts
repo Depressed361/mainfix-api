@@ -11,10 +11,14 @@ export class ListRoutingRules {
   ) {}
 
   async execute(actor: AuthenticatedActor, contractVersionId: string): Promise<RoutingRule[]> {
-    const cv = await this.contracts.getContractVersion(contractVersionId);
-    if (!cv) throw new NotFoundError('routing.contract_version.not_found');
-    assertContractInCompany(actor, cv);
-    return this.rules.listByContractVersion(contractVersionId);
+    try {
+      const cv = await this.contracts.getContractVersion(contractVersionId);
+      if (!cv) return [];
+      assertContractInCompany(actor, cv);
+      return this.rules.listByContractVersion(contractVersionId);
+    } catch (_err) {
+      // Strict policy for LIST: out-of-scope or not found → empty list
+      return [];
+    }
   }
 }
-

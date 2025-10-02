@@ -16,6 +16,8 @@ import {
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { RequireAdminRoleGuard } from '../../auth/guards/require-admin-role.guard';
 import { ScopesGuard } from '../../auth/guards/scopes.guard';
+import { AdminContextDecorator } from '../../auth/decorators/admin-context.decorator';
+import type { AuthenticatedActor } from '../../auth/auth-actor.types';
 import { Scopes } from '../../auth/decorators/scopes.decorator';
 import {
   CreateCategoryDto,
@@ -70,7 +72,10 @@ export class TaxonomyController {
   listAllCategories(
     @Param('companyId') companyId: string,
     @Query() query: ListCategoriesQueryDto,
+    @AdminContextDecorator() actor: AuthenticatedActor,
   ) {
+    const allowed = actor.scopeStrings.includes('admin:super') || actor.companyId === companyId || actor.companyScopeIds.includes(companyId);
+    if (!allowed) return [];
     return this.execute(() =>
       this.listCategories.execute({
         companyId,

@@ -26,7 +26,12 @@ export class AuthActorService {
   ) {}
 
   async loadActor(userId: string): Promise<AuthenticatedActor> {
-    const user = await this.usersService.findById(userId).catch(() => {
+    const user = await this.usersService.findById(userId).catch((err) => {
+      if (process.env.NODE_ENV === 'test') {
+        // Help debugging unexpected 401s in e2e by surfacing context
+        // eslint-disable-next-line no-console
+        console.warn('[AuthActorService.loadActor] test env: user not found', userId, String(err?.message || err));
+      }
       throw new UnauthorizedException('User not found');
     });
 

@@ -1,5 +1,5 @@
 import type { AdminScopeGuard, ApprovalsCommand, ApprovalsQuery, DirectoryQuery, TeamsQuery, TicketEventCommand, TicketPartRepository, TicketCostRepository, TicketsQuery, UUID } from '../ports';
-import { assertDecimalStringOrUndefined, isTravelLike, mul } from '../policies';
+import { assertDecimalStringOrUndefined, isTravelLike, mul, assertActorCanWriteCost } from '../policies';
 
 export class AddOrUpdatePart {
   constructor(
@@ -17,7 +17,7 @@ export class AddOrUpdatePart {
   async execute(actorUserId: UUID, p: { ticketId: UUID; id?: UUID; sku?: string; label?: string; qty: string; unitCost: string; currency?: string }) {
     assertDecimalStringOrUndefined(p.qty, 'qty');
     assertDecimalStringOrUndefined(p.unitCost, 'unitCost');
-    await (await import('../policies')).assertActorCanWriteCost(this.guard, this.dirs, this.teams, this.tickets, actorUserId, p.ticketId);
+    await assertActorCanWriteCost(this.guard, this.dirs, this.teams, this.tickets, actorUserId, p.ticketId);
 
     const beforeCost = await this.costs.getByTicket(p.ticketId);
     const saved = await this.parts.addOrUpdate({ id: p.id, ticketId: p.ticketId, sku: p.sku, label: p.label, qty: p.qty, unitCost: p.unitCost });
@@ -44,4 +44,3 @@ export class AddOrUpdatePart {
     return { part: saved, cost: afterCost };
   }
 }
-

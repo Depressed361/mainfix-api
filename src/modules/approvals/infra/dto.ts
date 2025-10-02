@@ -1,8 +1,10 @@
-import { IsUUID, IsOptional, IsString, IsIn, IsNumberString, IsDateString, IsArray, MinLength, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsIn, IsNumberString, IsDateString, IsArray, MinLength, MaxLength, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 export type ApprovalStatus = 'PENDING'|'APPROVED'|'REJECTED';
+const UUIDISH = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export class CreateApprovalRequestDto {
-  @IsUUID() ticketId!: string;
+  @Matches(UUIDISH) ticketId!: string;
   @IsOptional() @IsString() @MaxLength(2000) reason?: string;
   @IsOptional() @IsNumberString() amountEstimate?: string; // "1234.56"
   @IsOptional() @IsString() @MinLength(3) @MaxLength(3) currency?: string; // default 'EUR'
@@ -14,12 +16,11 @@ export class DecideApprovalDto {
 }
 
 export class ListApprovalRequestsQueryDto {
-  @IsOptional() @IsUUID() companyId?: string;
-  @IsOptional() @IsArray() siteIds?: string[];
-  @IsOptional() @IsArray() buildingIds?: string[];
-  @IsOptional() @IsArray() status?: ApprovalStatus[];
+  @IsOptional() @Matches(UUIDISH) companyId?: string;
+  @IsOptional() @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined)) @IsArray() siteIds?: string[];
+  @IsOptional() @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined)) @IsArray() buildingIds?: string[];
+  @IsOptional() @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined)) @IsArray() status?: ApprovalStatus[];
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
   page?: number; pageSize?: number;
 }
-

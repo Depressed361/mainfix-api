@@ -15,6 +15,8 @@ import { UpdateCompetencyDto } from '../dto/update-competency.dto';
 import { ResolveCompetencyQueryDto } from '../dto/resolve-competency.query';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { ScopesGuard } from '../../auth/guards/scopes.guard';
+import { AdminContextDecorator } from '../../auth/decorators/admin-context.decorator';
+import type { AuthenticatedActor } from '../../auth/auth-actor.types';
 import { Scopes } from '../../auth/decorators/scopes.decorator';
 
 @UseGuards(JwtAuthGuard, ScopesGuard)
@@ -52,8 +54,9 @@ export class CompetencyController {
     @Param('contractId') contractId: string,
     @Param('version') version: string,
     @Query() query: ResolveCompetencyQueryDto,
+    @AdminContextDecorator() actor: AuthenticatedActor,
   ) {
-    return this.competencyService.resolve({
+    return this.competencyService.resolve(actor, {
       contractId,
       version: Number(version),
       categoryId: query.categoryId,

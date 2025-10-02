@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { QueryTypes } from 'sequelize';
@@ -7,6 +7,9 @@ import { ContractVersion } from '../../contracts/models/contract-version.model';
 import { CreateCompetencyDto } from '../dto/create-competency.dto';
 import { UpdateCompetencyDto } from '../dto/update-competency.dto';
 import { ResolveCompetencyQueryDto } from '../dto/resolve-competency.query';
+import type { AuthenticatedActor } from '../../auth/auth-actor.types';
+import { Contract } from '../../contracts/models/contract.model';
+import { Site } from '../../catalog/models/site.model';
 
 @Injectable()
 export class CompetencyService {
@@ -15,6 +18,10 @@ export class CompetencyService {
     private readonly matrix: typeof CompetencyMatrix,
     @InjectModel(ContractVersion)
     private readonly contractVersions: typeof ContractVersion,
+    @InjectModel(Contract)
+    private readonly contracts: typeof Contract,
+    @InjectModel(Site)
+    private readonly sites: typeof Site,
     @InjectConnection() private readonly sequelize: Sequelize,
   ) {}
 
@@ -50,11 +57,23 @@ export class CompetencyService {
     return { deleted: 1 };
   }
 
-  async resolve(query: ResolveCompetencyQueryDto) {
+  async resolve(actor: AuthenticatedActor, query: ResolveCompetencyQueryDto) {
     const version = await this.contractVersions.findOne({
       where: { contractId: query.contractId, version: query.version },
     });
     if (!version) {
+      throw new NotFoundException('Contract version not found');
+    }
+
+    // Strict policy: verify actor can read within company perimeter; otherwise obfuscate as 404
+    const contract = await this.contracts.findByPk(query.contractId);
+    if (!contract) throw new NotFoundException('Contract not found');
+    const site = await this.sites.findByPk(contract.siteId);
+    const companyId = site?.companyId;
+    const hasSuper = actor.scopeStrings?.includes('admin:super');
+    const allowed = hasSuper || actor.companyId === companyId || (actor.companyScopeIds || []).includes(companyId!) || (actor.siteScopeIds || []).includes(contract.siteId);
+    if (!allowed) {
+      // obfuscate
       throw new NotFoundException('Contract version not found');
     }
 

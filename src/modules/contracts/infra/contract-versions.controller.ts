@@ -39,8 +39,7 @@ export class ContractVersionsControllerV2 {
   }
 
   @Get()
-  list(@Query('contractId') contractId: string) {
-    return this.listVersions.execute(contractId);
+  list(@Query('contractId') contractId: string, @AdminContextDecorator() actor: AuthenticatedActor) {
+    return this.listVersions.execute(actor, contractId);
   }
 }
-

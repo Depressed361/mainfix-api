@@ -39,8 +39,7 @@ export class ContractsControllerV2 {
   }
 
   @Get()
-  list(@Query('siteId') siteId: string) {
-    return this.listContracts.execute(siteId);
+  list(@Query('siteId') siteId: string, @AdminContextDecorator() actor: AuthenticatedActor) {
+    return this.listContracts.execute(actor, siteId);
   }
 }
-

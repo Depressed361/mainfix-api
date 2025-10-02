@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SequelizeModule } from '@nestjs/sequelize';
+import { SequelizeModule, getModelToken } from '@nestjs/sequelize';
 import { Contract } from './models/contract.model';
 import { ContractVersion } from './models/contract-version.model';
 import { ContractCategory } from './models/contract-category.model';
@@ -32,14 +32,14 @@ import { Site } from '../catalog/models/site.model';
 @Module({
   imports: [SequelizeModule.forFeature([Contract, ContractVersion, ContractCategory, Site])],
   controllers: [
-    // Legacy controllers kept for backward compatibility
-    ContractsController,
-    ContractVersionsController,
-    ContractVersionsAdminController,
-    // New domain-driven controllers
+    // New domain-driven controllers first (to avoid path collisions)
     ContractsControllerV2,
     ContractVersionsControllerV2,
     ContractCategoriesControllerV2,
+    // Legacy controllers (kept for backward compatibility)
+    ContractsController,
+    ContractVersionsController,
+    ContractVersionsAdminController,
   ],
   providers: [
     ContractsService,
@@ -49,14 +49,14 @@ import { Site } from '../catalog/models/site.model';
     { provide: TOKENS.ContractCategoryRepository, useClass: SequelizeContractCategoryRepository },
     { provide: TOKENS.ContractQuery, useClass: SequelizeContractQuery },
 
-    CreateContract,
-    UpdateContract,
-    ArchiveContract,
-    ListContracts,
-    CreateContractVersion,
-    UpdateContractVersion,
-    DeleteContractVersion,
-    ListContractVersions,
+    { provide: CreateContract, useFactory: (repo) => new CreateContract(repo), inject: [TOKENS.ContractRepository] },
+    { provide: UpdateContract, useFactory: (repo) => new UpdateContract(repo), inject: [TOKENS.ContractRepository] },
+    { provide: ArchiveContract, useFactory: (repo) => new ArchiveContract(repo), inject: [TOKENS.ContractRepository] },
+    { provide: ListContracts, useFactory: (repo, siteModel) => new ListContracts(repo, siteModel), inject: [TOKENS.ContractRepository, getModelToken(Site)] },
+    { provide: CreateContractVersion, useFactory: (repo) => new CreateContractVersion(repo), inject: [TOKENS.ContractVersionRepository] },
+    { provide: UpdateContractVersion, useFactory: (repo) => new UpdateContractVersion(repo), inject: [TOKENS.ContractVersionRepository] },
+    { provide: DeleteContractVersion, useFactory: (repo) => new DeleteContractVersion(repo), inject: [TOKENS.ContractVersionRepository] },
+    { provide: ListContractVersions, useFactory: (repo, contractModel, siteModel) => new ListContractVersions(repo, contractModel, siteModel), inject: [TOKENS.ContractVersionRepository, getModelToken(Contract), getModelToken(Site)] },
     UpsertContractCategory,
     RemoveContractCategory,
     ListContractCategories,

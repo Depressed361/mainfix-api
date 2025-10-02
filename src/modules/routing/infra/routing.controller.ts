@@ -65,6 +65,7 @@ export class RoutingController {
     @Query() query: ListRoutingRulesQueryDto,
     @AdminContextDecorator() actor: AuthenticatedActor,
   ) {
+    // List use-case now returns [] on out-of-scope
     return this.listRules.execute(actor, query.contractVersionId).catch(mapDomainError);
   }
 

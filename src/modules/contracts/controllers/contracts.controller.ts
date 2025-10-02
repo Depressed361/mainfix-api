@@ -1,9 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CreateContractDto } from '../dto/create-contract.dto';
 import { ListContractsQueryDto } from '../dto/list-contracts.query.dto';
 import { ContractsService } from '../services/contracts.service';
+import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { RequireAdminRoleGuard } from '../../auth/guards/require-admin-role.guard';
+import { ScopesGuard } from '../../auth/guards/scopes.guard';
+import { CompanyScopeGuard } from '../../auth/guards/company-scope.guard';
 
 @Controller('contracts')
+@UseGuards(JwtAuthGuard, RequireAdminRoleGuard, ScopesGuard, CompanyScopeGuard)
 export class ContractsController {
   constructor(private readonly contracts: ContractsService) {}
 
