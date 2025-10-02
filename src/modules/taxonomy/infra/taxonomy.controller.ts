@@ -69,14 +69,14 @@ export class TaxonomyController {
 
   @Scopes('category:read')
   @Get('categories')
-  listAllCategories(
+  async listAllCategories(
     @Param('companyId') companyId: string,
     @Query() query: ListCategoriesQueryDto,
     @AdminContextDecorator() actor: AuthenticatedActor,
   ) {
     const allowed = actor.scopeStrings.includes('admin:super') || actor.companyId === companyId || actor.companyScopeIds.includes(companyId);
     if (!allowed) return [];
-    return this.execute(() =>
+    const { items, skillsByCategory } = await this.execute(() =>
       this.listCategories.execute({
         companyId,
         includeSkills: query.includeSkills,
@@ -85,6 +85,8 @@ export class TaxonomyController {
         pageSize: query.pageSize,
       }),
     );
+    if (!query.includeSkills) return items;
+    return items.map((c: any) => ({ ...c, skills: (skillsByCategory || {})[c.id] || [] }));
   }
 
   @Scopes('category:write')
@@ -132,11 +134,11 @@ export class TaxonomyController {
 
   @Scopes('skill:read')
   @Get('skills')
-  listAllSkills(
+  async listAllSkills(
     @Param('companyId') companyId: string,
     @Query() query: ListSkillsQueryDto,
   ) {
-    return this.execute(() =>
+    const { items, categoriesBySkill } = await this.execute(() =>
       this.listSkills.execute({
         companyId,
         includeCategories: query.includeCategories,
@@ -145,6 +147,8 @@ export class TaxonomyController {
         pageSize: query.pageSize,
       }),
     );
+    if (!query.includeCategories) return items;
+    return items.map((s: any) => ({ ...s, categories: (categoriesBySkill || {})[s.id] || [] }));
   }
 
   @Scopes('skill:write')

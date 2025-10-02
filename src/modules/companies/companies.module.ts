@@ -40,6 +40,6 @@ import { OnboardVendorForSite } from './domain/use-cases/OnboardVendorForSite';
       inject: [TOKENS.CatalogQuery, TOKENS.CompanyQuery, TOKENS.DirectoryCommand],
     },
   ],
-  exports: [SequelizeModule, TOKENS.CompanyQuery],
+  exports: [SequelizeModule, TOKENS.CompanyQuery, TOKENS.CatalogQuery],
 })
 export class CompaniesModule {}

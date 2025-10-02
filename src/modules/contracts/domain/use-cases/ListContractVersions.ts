@@ -8,13 +8,21 @@ export class ListContractVersions {
   constructor(private readonly versions: ContractVersionRepository, private readonly contracts: typeof Contract, private readonly sites: typeof Site) {}
   async execute(actor: AuthenticatedActor, contractId: UUID, p?: Pagination) {
     const contract = await this.contracts.findByPk(contractId);
-    if (!contract) return [];
-    const site = await this.sites.findByPk(contract.siteId);
-    const companyId = site?.companyId;
-    if (!companyId) return [];
+    if (!contract) {
+      return [];
+    }
+    const siteId = contract.getDataValue('siteId');
+    const site = await this.sites.findByPk(siteId);
+    const companyId = site?.getDataValue('companyId');
+    if (!companyId) {
+      return [];
+    }
     const hasSuper = actor.scopeStrings?.includes('admin:super');
-    const allowed = hasSuper || actor.companyId === companyId || (actor.companyScopeIds || []).includes(companyId) || (actor.siteScopeIds || []).includes(contract.siteId);
-    if (!allowed) return [];
-    return this.versions.listByContract(contractId, p);
+    const allowed = hasSuper || actor.companyId === companyId || (actor.companyScopeIds || []).includes(companyId) || (actor.siteScopeIds || []).includes(siteId);
+    if (!allowed) {
+      return [];
+    }
+    const rows = await this.versions.listByContract(contractId, p);
+    return rows;
   }
 }

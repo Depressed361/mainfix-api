@@ -22,9 +22,9 @@ export class SequelizeTicketRepository implements TicketRepository {
       description: t.description ?? null,
       slaAckDeadline: t.ackDueAt ?? null,
       slaResolveDeadline: t.resolveDueAt ?? null,
-      contractId: t.contractSnapshot?.contractVersionId ?? null,
-      contractVersion: undefined,
-      contractSnapshot: {},
+      contractId: null,
+      contractVersion: null,
+      contractSnapshot: t.contractSnapshot ?? {},
     } as any);
     return toDomainTicket(row);
   }
@@ -50,4 +50,3 @@ export class SequelizeTicketRepository implements TicketRepository {
   async setSlaTargets(id: string, ackDueAt: Date | null, resolveDueAt: Date | null) { await this.model.update({ slaAckDeadline: ackDueAt, slaResolveDeadline: resolveDueAt } as any, { where: { id } as any }) }
   async setMilestones(id: string, m: any) { await this.model.update(m as any, { where: { id } as any }) }
 }
-

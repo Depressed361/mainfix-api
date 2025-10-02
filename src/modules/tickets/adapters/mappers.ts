@@ -25,7 +25,7 @@ export const toDomainTicket = (m: Ticket): TicketEntity => ({
   closedAt: (m as any).closedAt ?? null,
   ackDueAt: (m as any).slaAckDeadline ?? null,
   resolveDueAt: (m as any).slaResolveDeadline ?? null,
-  contractSnapshot: { contractVersionId: (m as any).contractId ?? '', siteId: m.siteId, sla: { P1: { ackMinutes: 0, resolveHours: 0 }, P2: { ackMinutes: 0, resolveHours: 0 }, P3: { ackMinutes: 0, resolveHours: 0 } } },
+  contractSnapshot: (m as any).contractSnapshot ?? { contractVersionId: (m as any).contractId ?? '', siteId: m.siteId, sla: { P1: { ackMinutes: 0, resolveHours: 0 }, P2: { ackMinutes: 0, resolveHours: 0 }, P3: { ackMinutes: 0, resolveHours: 0 } } },
 });
 
 export const toDomainEvent = (e: TicketEvent): TicketEventEntity => ({ id: e.id, ticketId: e.ticketId, type: e.type as any, actorUserId: (e as any).actorUserId ?? '', payload: (e as any).payload ?? undefined, createdAt: e.createdAt });

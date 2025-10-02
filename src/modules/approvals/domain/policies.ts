@@ -14,7 +14,10 @@ export interface ThresholdContext {
   rules: ApprovalRulesJson;
 }
 
-export function parseThresholdEUR(rules: ApprovalRulesJson, ctx: { priority: 'P1' | 'P2' | 'P3' }): string | null {
+export function parseThresholdEUR(
+  rules: ApprovalRulesJson,
+  ctx: { priority: 'P1' | 'P2' | 'P3' },
+): string | null {
   // Best-effort parser with safe typing. Recognizes simple shapes:
   // - { thresholdEUR: "1000.00" }
   // - { byPriority: { P1: "1000.00", P2: "2000.00" } }
@@ -31,9 +34,14 @@ export function parseThresholdEUR(rules: ApprovalRulesJson, ctx: { priority: 'P1
   return null;
 }
 
-export function shouldTriggerApproval(amountEUR: string | null, context: ThresholdContext): boolean {
+export function shouldTriggerApproval(
+  amountEUR: string | null,
+  context: ThresholdContext,
+): boolean {
   if (!amountEUR) return false;
-  const threshold = parseThresholdEUR(context.rules, { priority: context.ticket.priority });
+  const threshold = parseThresholdEUR(context.rules, {
+    priority: context.ticket.priority,
+  });
   if (!threshold) return false;
   // Compare as decimals represented as strings; convert to numbers safely (no fractions beyond 2 decimals expected)
   const a = Number(amountEUR);
@@ -49,4 +57,3 @@ export function shouldKeepBlockedOnReject(_rules: ApprovalRulesJson): boolean {
   const r = _rules as Record<string, unknown>;
   return r['keepBlockedOnReject'] === true;
 }
-

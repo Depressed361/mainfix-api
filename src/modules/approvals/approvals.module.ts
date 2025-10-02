@@ -4,7 +4,14 @@ import { ApprovalRequest } from './approval-request.model';
 import { ApprovalsController } from './infra/approvals.controller';
 import { TOKENS } from './domain/ports';
 import { SequelizeApprovalRequestRepository } from './adapters/approval-request.repository.sequelize';
-import { SequelizeTicketsQuery, SequelizeContractsQuery, SequelizeDirectoryQueryForApprovals, SequelizeTicketEventCommandForApprovals, NullCostQuery, AdminScopeGuardAdapter } from './adapters/queries.sequelize';
+import {
+  SequelizeTicketsQuery,
+  SequelizeContractsQuery,
+  SequelizeDirectoryQueryForApprovals,
+  SequelizeTicketEventCommandForApprovals,
+  NullCostQuery,
+  AdminScopeGuardAdapter,
+} from './adapters/queries.sequelize';
 import { NoopTicketCommand } from './adapters/commands.stubs';
 import { EvaluateApprovalNeed } from './domain/use-cases/EvaluateApprovalNeed';
 import { CreateApprovalRequest } from './domain/use-cases/CreateApprovalRequest';
@@ -23,24 +30,86 @@ import { Site } from '../catalog/models/site.model';
 import { Building } from '../catalog/models/buildings.model';
 
 @Module({
-  imports: [SequelizeModule.forFeature([ApprovalRequest, Ticket, TicketEvent, ContractVersion, User, Site, Building, AdminScope]), UsersModule],
+  imports: [
+    SequelizeModule.forFeature([
+      ApprovalRequest,
+      Ticket,
+      TicketEvent,
+      ContractVersion,
+      User,
+      Site,
+      Building,
+      AdminScope,
+    ]),
+    UsersModule,
+  ],
   controllers: [ApprovalsController],
   providers: [
     // Ports
-    { provide: TOKENS.ApprovalRequestRepository, useClass: SequelizeApprovalRequestRepository },
+    {
+      provide: TOKENS.ApprovalRequestRepository,
+      useClass: SequelizeApprovalRequestRepository,
+    },
     { provide: TOKENS.TicketsQuery, useClass: SequelizeTicketsQuery },
     { provide: TOKENS.ContractsQuery, useClass: SequelizeContractsQuery },
-    { provide: TOKENS.DirectoryQuery, useClass: SequelizeDirectoryQueryForApprovals },
-    { provide: TOKENS.TicketEventCommand, useClass: SequelizeTicketEventCommandForApprovals },
+    {
+      provide: TOKENS.DirectoryQuery,
+      useClass: SequelizeDirectoryQueryForApprovals,
+    },
+    {
+      provide: TOKENS.TicketEventCommand,
+      useClass: SequelizeTicketEventCommandForApprovals,
+    },
     { provide: TOKENS.CostQuery, useClass: NullCostQuery },
-    { provide: TOKENS.AdminScopeGuard, useFactory: (actors, evaluator) => new AdminScopeGuardAdapter(actors, evaluator), inject: [AuthActorService, AdminScopeEvaluatorService] },
+    {
+      provide: TOKENS.AdminScopeGuard,
+      useFactory: (actors, evaluator) =>
+        new AdminScopeGuardAdapter(actors, evaluator),
+      inject: [AuthActorService, AdminScopeEvaluatorService],
+    },
     { provide: TOKENS.TicketCommand, useClass: NoopTicketCommand },
     // Use-cases
-    { provide: EvaluateApprovalNeed, useFactory: (repo, tq, cq, cost, ev) => new EvaluateApprovalNeed(repo, tq, cq, cost, ev), inject: [TOKENS.ApprovalRequestRepository, TOKENS.TicketsQuery, TOKENS.ContractsQuery, TOKENS.CostQuery, TOKENS.TicketEventCommand] },
-    { provide: CreateApprovalRequest, useFactory: (repo, ev) => new CreateApprovalRequest(repo, ev), inject: [TOKENS.ApprovalRequestRepository, TOKENS.TicketEventCommand] },
-    { provide: DecideApproval, useFactory: (repo, tq, dirs, guard, cq, ev, cmd) => new DecideApproval(repo, tq, dirs, guard, cq, ev, cmd), inject: [TOKENS.ApprovalRequestRepository, TOKENS.TicketsQuery, TOKENS.DirectoryQuery, TOKENS.AdminScopeGuard, TOKENS.ContractsQuery, TOKENS.TicketEventCommand, TOKENS.TicketCommand] },
-    { provide: ListApprovalRequests, useFactory: (repo, guard) => new ListApprovalRequests(repo, guard), inject: [TOKENS.ApprovalRequestRepository, TOKENS.AdminScopeGuard] },
-    { provide: GetApprovalStatusForTicket, useFactory: (repo) => new GetApprovalStatusForTicket(repo), inject: [TOKENS.ApprovalRequestRepository] },
+    {
+      provide: EvaluateApprovalNeed,
+      useFactory: (repo, tq, cq, cost, ev) =>
+        new EvaluateApprovalNeed(repo, tq, cq, cost, ev),
+      inject: [
+        TOKENS.ApprovalRequestRepository,
+        TOKENS.TicketsQuery,
+        TOKENS.ContractsQuery,
+        TOKENS.CostQuery,
+        TOKENS.TicketEventCommand,
+      ],
+    },
+    {
+      provide: CreateApprovalRequest,
+      useFactory: (repo, ev) => new CreateApprovalRequest(repo, ev),
+      inject: [TOKENS.ApprovalRequestRepository, TOKENS.TicketEventCommand],
+    },
+    {
+      provide: DecideApproval,
+      useFactory: (repo, tq, dirs, guard, cq, ev, cmd) =>
+        new DecideApproval(repo, tq, dirs, guard, cq, ev, cmd),
+      inject: [
+        TOKENS.ApprovalRequestRepository,
+        TOKENS.TicketsQuery,
+        TOKENS.DirectoryQuery,
+        TOKENS.AdminScopeGuard,
+        TOKENS.ContractsQuery,
+        TOKENS.TicketEventCommand,
+        TOKENS.TicketCommand,
+      ],
+    },
+    {
+      provide: ListApprovalRequests,
+      useFactory: (repo, guard) => new ListApprovalRequests(repo, guard),
+      inject: [TOKENS.ApprovalRequestRepository, TOKENS.AdminScopeGuard],
+    },
+    {
+      provide: GetApprovalStatusForTicket,
+      useFactory: (repo) => new GetApprovalStatusForTicket(repo),
+      inject: [TOKENS.ApprovalRequestRepository],
+    },
     // Cross-module services
     AuthActorService,
     AdminScopeEvaluatorService,

@@ -45,8 +45,8 @@ export class CompanyScopeGuard implements CanActivate {
   }
 
   private hasAccess(actor: AuthenticatedActor, companyId: string): boolean {
-    if (actor.scopeStrings.includes('admin:super')) return true;
-    if (actor.companyScopeIds.includes(companyId)) return true;
+    if ((actor.scopeStrings || []).includes('admin:super')) return true;
+    if ((actor.companyScopeIds || []).includes(companyId)) return true;
     return actor.companyId === companyId;
   }
 }

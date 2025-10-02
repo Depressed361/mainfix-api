@@ -22,9 +22,8 @@ export class SequelizeContractCategoryRepository
       },
     });
     if (existing) {
-      existing.included = p.included;
-      existing.sla = p.sla as typeof existing.sla;
-      await existing.save();
+      await this.model.update({ included: p.included, sla: p.sla as any } as any, { where: { id: existing.id } as any });
+      await existing.reload();
       return toDomainCategory(existing);
     }
     const row = await this.model.create({

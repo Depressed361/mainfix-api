@@ -7,11 +7,16 @@ export class ListContracts {
   constructor(private readonly contracts: ContractRepository, private readonly sites: typeof Site) {}
   async execute(actor: AuthenticatedActor, siteId: UUID, p?: Pagination) {
     const site = await this.sites.findByPk(siteId);
-    if (!site) return [];
-    const companyId = site.companyId;
+    if (!site) {
+      return [];
+    }
+    const companyId = site.getDataValue('companyId');
     const hasSuper = actor.scopeStrings?.includes('admin:super');
     const allowed = hasSuper || actor.companyId === companyId || (actor.companyScopeIds || []).includes(companyId) || (actor.siteScopeIds || []).includes(siteId);
-    if (!allowed) return [];
-    return this.contracts.listBySite(siteId, p);
+    if (!allowed) {
+      return [];
+    }
+    const rows = await this.contracts.listBySite(siteId, p);
+    return rows;
   }
 }

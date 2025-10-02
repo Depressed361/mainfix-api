@@ -5,6 +5,7 @@ import { Category } from './models/category.model';
 import { Skill } from './models/skill.model';
 import { CategorySkill } from './models/category-skill.model';
 import { TaxonomyController } from './infra/taxonomy.controller';
+import { TaxonomySelfController } from './infra/taxonomy-self.controller';
 import { CompanyScopeGuard } from '../auth/guards/company-scope.guard';
 import { SequelizeCategoryRepository } from './adapters/category.repository.sequelize';
 import { SequelizeSkillRepository } from './adapters/skill.repository.sequelize';
@@ -44,7 +45,7 @@ import { TeamSkill } from '../competency/models/team-skills.model';
     ]),
     AuthModule,
   ],
-  controllers: [TaxonomyController],
+  controllers: [TaxonomyController, TaxonomySelfController],
   providers: [
     { provide: CATEGORY_REPOSITORY, useClass: SequelizeCategoryRepository },
     { provide: SKILL_REPOSITORY, useClass: SequelizeSkillRepository },

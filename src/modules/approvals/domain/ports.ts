@@ -12,25 +12,43 @@ export interface ApprovalRequestEntity {
   createdAt: Date;
 }
 
-export interface Pagination { page?: number; pageSize?: number }
+export interface Pagination {
+  page?: number;
+  pageSize?: number;
+}
 
 export interface ApprovalRequestRepository {
-  create(p: Omit<ApprovalRequestEntity, 'id' | 'status' | 'createdAt' | 'currency'> & { currency?: string }): Promise<ApprovalRequestEntity>;
+  create(
+    p: Omit<
+      ApprovalRequestEntity,
+      'id' | 'status' | 'createdAt' | 'currency'
+    > & { currency?: string },
+  ): Promise<ApprovalRequestEntity>;
   setStatus(id: UUID, status: ApprovalStatus): Promise<void>;
   findById(id: UUID): Promise<ApprovalRequestEntity | null>;
   findPendingByTicket(ticketId: UUID): Promise<ApprovalRequestEntity | null>;
   list(q: {
-    companyId?: UUID; siteIds?: UUID[]; buildingIds?: UUID[];
-    ticketIds?: UUID[]; status?: ApprovalStatus[];
-    from?: Date; to?: Date; page?: number; pageSize?: number;
+    companyId?: UUID;
+    siteIds?: UUID[];
+    buildingIds?: UUID[];
+    ticketIds?: UUID[];
+    status?: ApprovalStatus[];
+    from?: Date;
+    to?: Date;
+    page?: number;
+    pageSize?: number;
   }): Promise<{ rows: ApprovalRequestEntity[]; total: number }>;
 }
 
 export interface TicketsQuery {
   getTicketMeta(ticketId: UUID): Promise<{
-    companyId: UUID; siteId: UUID; buildingId?: UUID | null;
-    categoryId: UUID; priority: 'P1' | 'P2' | 'P3';
-    status: string; createdAt: Date;
+    companyId: UUID;
+    siteId: UUID;
+    buildingId?: UUID | null;
+    categoryId: UUID;
+    priority: 'P1' | 'P2' | 'P3';
+    status: string;
+    createdAt: Date;
     contractVersionId: UUID;
   }>;
 }
@@ -52,11 +70,20 @@ export interface AdminScopeGuard {
 }
 
 export interface DirectoryQuery {
-  getUserMeta(userId: UUID): Promise<{ companyId: UUID; role: 'occupant' | 'maintainer' | 'manager' | 'approver' | 'admin'; active: boolean }>;
+  getUserMeta(userId: UUID): Promise<{
+    companyId: UUID;
+    role: 'occupant' | 'maintainer' | 'manager' | 'approver' | 'admin';
+    active: boolean;
+  }>;
 }
 
 export interface TicketEventCommand {
-  appendEvent(p: { ticketId: UUID; actorUserId: UUID; type: string; payload?: unknown }): Promise<void>;
+  appendEvent(p: {
+    ticketId: UUID;
+    actorUserId: UUID;
+    type: string;
+    payload?: unknown;
+  }): Promise<void>;
 }
 
 export interface TicketCommand {
@@ -75,4 +102,3 @@ export const TOKENS = {
   TicketEventCommand: 'Approvals.TicketEventCommand',
   TicketCommand: 'Approvals.TicketCommand',
 } as const;
-

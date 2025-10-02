@@ -17,10 +17,13 @@ export class SequelizeContractQuery implements ContractQuery {
   async getContractVersionMeta(id: UUID): Promise<{ contractId: UUID; siteId: UUID; companyId?: UUID }> {
     const v = await this.versions.findByPk(id);
     if (!v) throw new Error('contracts.version.not_found');
-    const c = await this.contracts.findByPk(v.contractId);
+    const contractId = v.getDataValue('contractId');
+    const c = await this.contracts.findByPk(contractId);
     if (!c) throw new Error('contracts.contract.not_found');
-    const s = await this.sites.findByPk(c.siteId);
-    return { contractId: v.contractId, siteId: c.siteId, companyId: s?.companyId };
+    const siteId = c.getDataValue('siteId');
+    const s = await this.sites.findByPk(siteId);
+    const companyId = s ? s.getDataValue('companyId') : undefined;
+    return { contractId, siteId, companyId } as any;
   }
 
   async isCategoryIncluded(contractVersionId: UUID, categoryId: UUID): Promise<boolean> {
@@ -36,4 +39,3 @@ export class SequelizeContractQuery implements ContractQuery {
     return rows.map((r) => r.categoryId);
   }
 }
-

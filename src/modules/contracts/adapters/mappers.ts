@@ -6,12 +6,25 @@ import { ContractVersion } from '../models/contract-version.model';
 import { ContractCategory } from '../models/contract-category.model';
 
 export const toDomainContract = (m: Contract): ContractEntity => ({
-  id: m.id, siteId: m.siteId, providerCompanyId: (m as any).providerCompanyId ?? null, name: m.name, active: m.active,
+  id: m.getDataValue('id'),
+  siteId: m.getDataValue('siteId'),
+  providerCompanyId: m.getDataValue('providerCompanyId') ?? null,
+  name: m.getDataValue('name'),
+  active: m.getDataValue('active'),
 });
 export const toDomainVersion = (m: ContractVersion): ContractVersionEntity => ({
-  id: m.id, contractId: m.contractId, version: m.version, createdAt: m.createdAt, coverage: m.coverage as any, escalation: m.escalation as any, approvals: m.approvals as any,
+  id: m.getDataValue('id'),
+  contractId: m.getDataValue('contractId'),
+  version: m.getDataValue('version'),
+  createdAt: m.getDataValue('createdAt'),
+  coverage: m.getDataValue('coverage') as any,
+  escalation: m.getDataValue('escalation') as any,
+  approvals: m.getDataValue('approvals') as any,
 });
 export const toDomainCategory = (m: ContractCategory): ContractCategoryEntity => ({
-  id: m.id, contractVersionId: m.contractVersionId, categoryId: m.categoryId, included: m.included, sla: m.sla as any,
+  id: m.getDataValue('id'),
+  contractVersionId: m.getDataValue('contractVersionId'),
+  categoryId: m.getDataValue('categoryId'),
+  included: m.getDataValue('included'),
+  sla: m.getDataValue('sla') as any,
 });
-
