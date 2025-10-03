@@ -1,39 +1,94 @@
-import type { UUID, CoverageJson, EscalationJson, ApprovalsJson, SlaByPriority } from './types';
+import type {
+  UUID,
+  CoverageJson,
+  EscalationJson,
+  ApprovalsJson,
+  SlaByPriority,
+} from './types';
 import type { ContractEntity } from './entities/Contract';
 import type { ContractVersionEntity } from './entities/ContractVersion';
 import type { ContractCategoryEntity } from './entities/ContractCategory';
 
-export interface Pagination { page?: number; pageSize?: number }
+export interface Pagination {
+  page?: number;
+  pageSize?: number;
+}
 
 export interface ContractRepository {
-  create(p: Omit<ContractEntity, 'id' | 'active'> & { active?: boolean }): Promise<ContractEntity>;
-  update(id: UUID, patch: Partial<Omit<ContractEntity, 'id'>>): Promise<ContractEntity>;
+  create(
+    p: Omit<ContractEntity, 'id' | 'active'> & { active?: boolean },
+  ): Promise<ContractEntity>;
+  update(
+    id: UUID,
+    patch: Partial<Omit<ContractEntity, 'id'>>,
+  ): Promise<ContractEntity>;
   archive(id: UUID): Promise<void>;
   findById(id: UUID): Promise<ContractEntity | null>;
   listBySite(siteId: UUID, p?: Pagination): Promise<ContractEntity[]>;
 }
 
 export interface ContractVersionRepository {
-  create(p: Omit<ContractVersionEntity, 'id' | 'createdAt'>): Promise<ContractVersionEntity>;
-  update(id: UUID, patch: Partial<Omit<ContractVersionEntity, 'id' | 'contractId' | 'version'>>): Promise<ContractVersionEntity>;
+  create(
+    p: Omit<ContractVersionEntity, 'id' | 'createdAt'>,
+  ): Promise<ContractVersionEntity>;
+  update(
+    id: UUID,
+    patch: Partial<
+      Omit<ContractVersionEntity, 'id' | 'contractId' | 'version'>
+    >,
+  ): Promise<ContractVersionEntity>;
   deleteById(id: UUID): Promise<void>;
   findById(id: UUID): Promise<ContractVersionEntity | null>;
-  listByContract(contractId: UUID, p?: Pagination): Promise<ContractVersionEntity[]>;
-  findByContractAndVersion(contractId: UUID, version: number): Promise<ContractVersionEntity | null>;
+  listByContract(
+    contractId: UUID,
+    p?: Pagination,
+  ): Promise<ContractVersionEntity[]>;
+  findByContractAndVersion(
+    contractId: UUID,
+    version: number,
+  ): Promise<ContractVersionEntity | null>;
   getMaxVersion(contractId: UUID): Promise<number | null>;
 }
 
+export interface ContractVersionMeta {
+  contractId: UUID;
+  siteId: UUID;
+  companyId?: UUID | null;
+  version: number;
+  coverage: CoverageJson;
+  escalation?: EscalationJson | null;
+  approvals?: ApprovalsJson | null;
+  categories: Array<{
+    categoryId: UUID;
+    included: boolean;
+    sla: SlaByPriority;
+  }>;
+}
+
 export interface ContractCategoryRepository {
-  upsert(p: Omit<ContractCategoryEntity, 'id'>): Promise<ContractCategoryEntity>;
+  upsert(
+    p: Omit<ContractCategoryEntity, 'id'>,
+  ): Promise<ContractCategoryEntity>;
   remove(contractVersionId: UUID, categoryId: UUID): Promise<void>;
-  listByContractVersion(contractVersionId: UUID): Promise<ContractCategoryEntity[]>;
-  find(contractVersionId: UUID, categoryId: UUID): Promise<ContractCategoryEntity | null>;
+  listByContractVersion(
+    contractVersionId: UUID,
+  ): Promise<ContractCategoryEntity[]>;
+  find(
+    contractVersionId: UUID,
+    categoryId: UUID,
+  ): Promise<ContractCategoryEntity | null>;
 }
 
 export interface ContractQuery {
-  getContractVersionMeta(id: UUID): Promise<{ contractId: UUID; siteId: UUID; companyId?: UUID }>;
-  isCategoryIncluded(contractVersionId: UUID, categoryId: UUID): Promise<boolean>;
-  getCategorySla(contractVersionId: UUID, categoryId: UUID): Promise<SlaByPriority | null>;
+  getContractVersionMeta(id: UUID): Promise<ContractVersionMeta>;
+  isCategoryIncluded(
+    contractVersionId: UUID,
+    categoryId: UUID,
+  ): Promise<boolean>;
+  getCategorySla(
+    contractVersionId: UUID,
+    categoryId: UUID,
+  ): Promise<SlaByPriority | null>;
   listIncludedCategories(contractVersionId: UUID): Promise<UUID[]>;
 }
 

@@ -54,18 +54,71 @@ import { TOKENS as DIRECTORY_TOKENS } from '../directory/domain/ports';
       useClass: SequelizeTicketLinkRepository,
     },
     // Bridge Tokens: reuse existing providers from other modules
-    { provide: TOKENS.ContractsQuery, useExisting: CONTRACTS_TOKENS.ContractQuery },
-    { provide: TOKENS.CatalogQuery, useExisting: COMPANIES_TOKENS.CatalogQuery },
-    { provide: TOKENS.DirectoryQuery, useExisting: DIRECTORY_TOKENS.DirectoryQuery },
+    {
+      provide: TOKENS.ContractsQuery,
+      useExisting: CONTRACTS_TOKENS.ContractQuery,
+    },
+    {
+      provide: TOKENS.CatalogQuery,
+      useExisting: COMPANIES_TOKENS.CatalogQuery,
+    },
+    {
+      provide: TOKENS.DirectoryQuery,
+      useExisting: DIRECTORY_TOKENS.DirectoryQuery,
+    },
 
     // Use-cases wired with explicit dependencies (no change to domain logic)
-    { provide: CreateTicket, useFactory: (t, ev, cat, con, dir) => new CreateTicket(t, ev, cat, con, dir), inject: [TOKENS.TicketRepository, TOKENS.TicketEventRepository, TOKENS.CatalogQuery, TOKENS.ContractsQuery, TOKENS.DirectoryQuery] },
-    { provide: AssignTicket, useFactory: (t, ev, dir) => new AssignTicket(t, ev, dir), inject: [TOKENS.TicketRepository, TOKENS.TicketEventRepository, TOKENS.DirectoryQuery] },
-    { provide: ChangeStatus, useFactory: (t, ev) => new ChangeStatus(t, ev), inject: [TOKENS.TicketRepository, TOKENS.TicketEventRepository] },
-    { provide: AddComment, useFactory: (c, ev) => new AddComment(c, ev), inject: [TOKENS.TicketCommentRepository, TOKENS.TicketEventRepository] },
-    { provide: LinkTickets, useFactory: (l, ev) => new LinkTickets(l, ev), inject: [TOKENS.TicketLinkRepository, TOKENS.TicketEventRepository] },
-    { provide: ListTickets, useFactory: (t) => new ListTickets(t), inject: [TOKENS.TicketRepository] },
-    { provide: GetTicketDetail, useFactory: (t, ev, c, l) => new GetTicketDetail(t, ev, c, l), inject: [TOKENS.TicketRepository, TOKENS.TicketEventRepository, TOKENS.TicketCommentRepository, TOKENS.TicketLinkRepository] },
+    {
+      provide: CreateTicket,
+      useFactory: (t, ev, cat, con, dir) =>
+        new CreateTicket(t, ev, cat, con, dir),
+      inject: [
+        TOKENS.TicketRepository,
+        TOKENS.TicketEventRepository,
+        TOKENS.CatalogQuery,
+        TOKENS.ContractsQuery,
+        TOKENS.DirectoryQuery,
+      ],
+    },
+    {
+      provide: AssignTicket,
+      useFactory: (t, ev, dir) => new AssignTicket(t, ev, dir),
+      inject: [
+        TOKENS.TicketRepository,
+        TOKENS.TicketEventRepository,
+        TOKENS.DirectoryQuery,
+      ],
+    },
+    {
+      provide: ChangeStatus,
+      useFactory: (t, ev) => new ChangeStatus(t, ev),
+      inject: [TOKENS.TicketRepository, TOKENS.TicketEventRepository],
+    },
+    {
+      provide: AddComment,
+      useFactory: (c, ev) => new AddComment(c, ev),
+      inject: [TOKENS.TicketCommentRepository, TOKENS.TicketEventRepository],
+    },
+    {
+      provide: LinkTickets,
+      useFactory: (l, ev) => new LinkTickets(l, ev),
+      inject: [TOKENS.TicketLinkRepository, TOKENS.TicketEventRepository],
+    },
+    {
+      provide: ListTickets,
+      useFactory: (t) => new ListTickets(t),
+      inject: [TOKENS.TicketRepository],
+    },
+    {
+      provide: GetTicketDetail,
+      useFactory: (t, ev, c, l) => new GetTicketDetail(t, ev, c, l),
+      inject: [
+        TOKENS.TicketRepository,
+        TOKENS.TicketEventRepository,
+        TOKENS.TicketCommentRepository,
+        TOKENS.TicketLinkRepository,
+      ],
+    },
   ],
   exports: [SequelizeModule],
 })

@@ -10,11 +10,12 @@ import {
   AllowNull,
   Default,
 } from 'sequelize-typescript';
+import type { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Ticket } from '../../tickets/models/ticket.model';
 import { User } from '../../directory/models/user.model';
 
 @Table({ tableName: 'ticket_events', timestamps: false })
-export class TicketEvent extends Model<TicketEvent> {
+export class TicketEvent extends Model<InferAttributes<TicketEvent>, InferCreationAttributes<TicketEvent>> {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.BIGINT)

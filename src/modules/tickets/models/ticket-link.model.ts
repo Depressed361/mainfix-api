@@ -7,10 +7,11 @@ import {
   BelongsTo,
   PrimaryKey,
 } from 'sequelize-typescript';
+import type { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Ticket } from './ticket.model';
 
 @Table({ tableName: 'ticket_links', timestamps: false })
-export class TicketLink extends Model<TicketLink> {
+export class TicketLink extends Model<InferAttributes<TicketLink>, InferCreationAttributes<TicketLink>> {
   @PrimaryKey
   @ForeignKey(() => Ticket)
   @Column({ field: 'parent_ticket_id', type: DataType.UUID })

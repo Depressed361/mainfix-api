@@ -9,11 +9,12 @@ import {
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
+import type { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Ticket } from './models/ticket.model';
 import { User } from '../directory/models/user.model';
 
 @Table({ tableName: 'ticket_comments', timestamps: false })
-export class TicketComment extends Model<TicketComment> {
+export class TicketComment extends Model<InferAttributes<TicketComment>, InferCreationAttributes<TicketComment>> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)

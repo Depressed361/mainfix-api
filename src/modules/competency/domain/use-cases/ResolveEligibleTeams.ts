@@ -31,10 +31,34 @@ export class ResolveEligibleTeams {
       ctx.contractVersionId,
       ctx.categoryId,
     );
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] rows', rows.length);
+    // eslint-disable-next-line no-console
+    console.log(
+      '[EligibleTeams] rows detail',
+      rows.map((r) => ({
+        teamId: r.teamId,
+        level: r.level,
+        window: r.window,
+        buildingId: r.buildingId ?? null,
+      })),
+    );
 
     // Filter by window
     const winRows = rows.filter(
       (r) => r.window === 'any' || r.window === ctx.timeWindow,
+    );
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] winRows', winRows.length, 'timeWindow=', ctx.timeWindow);
+    // eslint-disable-next-line no-console
+    console.log(
+      '[EligibleTeams] winRows detail',
+      winRows.map((r) => ({
+        teamId: r.teamId,
+        level: r.level,
+        window: r.window,
+        buildingId: r.buildingId ?? null,
+      })),
     );
 
     // Filter by building
@@ -48,6 +72,8 @@ export class ResolveEligibleTeams {
         ? specific
         : generic
       : generic;
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] chosen', chosen.length, 'specific=', specific.length, 'generic=', generic.length, 'buildingId=', buildingId);
 
     // Team active
     const actives = await Promise.all(
@@ -57,6 +83,8 @@ export class ResolveEligibleTeams {
       })),
     );
     const activeRows = actives.filter((x) => x.meta.active).map((x) => x.r);
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] activeRows', activeRows.length);
 
     // Zones
     let zoneRows = activeRows;
@@ -65,12 +93,20 @@ export class ResolveEligibleTeams {
         zoneRows.map((r) => this.zones.exists(r.teamId, buildingId)),
       );
       zoneRows = zoneRows.filter((_r, i) => checks[i]);
+      // eslint-disable-next-line no-console
+      console.log('[EligibleTeams] zoneRows', zoneRows.length);
+      // eslint-disable-next-line no-console
+      console.log(
+        '[EligibleTeams] zoneRows detail',
+        zoneRows.map((r) => ({ teamId: r.teamId, level: r.level })),
+      );
     }
 
     // Skills check for primary (ensure team has all required skills)
     const required = await this.taxonomy.requiredSkillsForCategory(
       ctx.categoryId,
     );
+    let teamSkillsMap: Map<string, Set<string>> | undefined;
     if (required.length > 0) {
       const grouped: Record<string, { level: CompetencyLevel }[]> = {};
       for (const r of zoneRows) {
@@ -80,16 +116,23 @@ export class ResolveEligibleTeams {
       const teamSkillList = await Promise.all(
         Object.keys(grouped).map((t) => this.skills.listByTeam(t)),
       );
-      const teamSkillsMap = new Map<string, Set<string>>();
+      teamSkillsMap = new Map<string, Set<string>>();
       Object.keys(grouped).forEach((t, idx) =>
-        teamSkillsMap.set(t, new Set(teamSkillList[idx].map((s) => s.skillId))),
+        teamSkillsMap!.set(t, new Set(teamSkillList[idx].map((s) => s.skillId))),
       );
 
       zoneRows = zoneRows.filter((r) => {
         if (r.level === 'backup') return true; // relaxed; routing can deprioritize later
-        const have = teamSkillsMap.get(r.teamId) ?? new Set<string>();
+        const have = (teamSkillsMap!.get(r.teamId)) ?? new Set<string>();
         return required.every((sk) => have.has(sk));
       });
+      // eslint-disable-next-line no-console
+      console.log('[EligibleTeams] requiredSkills', required);
+      // eslint-disable-next-line no-console
+      console.log(
+        '[EligibleTeams] zoneRows after skill check',
+        zoneRows.map((r) => ({ teamId: r.teamId, level: r.level })),
+      );
     }
 
     // Level preference
@@ -102,11 +145,33 @@ export class ResolveEligibleTeams {
         : prefer === 'any'
           ? [...primary, ...backup]
           : [...primary, ...backup];
+    // eslint-disable-next-line no-console
+    console.log(
+      '[EligibleTeams] ordered detail (pre-dedupe)',
+      ordered.map((r) => ({ teamId: r.teamId, level: r.level })),
+      'prefer=', prefer,
+    );
 
     // Deterministic order: by level (already), then teamId asc
-    const teamIds = Array.from(new Set(ordered.map((r) => r.teamId))).sort(
+    const orderedTeamIds = Array.from(new Set(ordered.map((r) => r.teamId)));
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] ordered teamIds (pre-sort)', orderedTeamIds);
+    let teamIds = orderedTeamIds.sort(
       (a, b) => a.localeCompare(b),
     );
+    // eslint-disable-next-line no-console
+    console.log('[EligibleTeams] final teamIds (sorted asc)', teamIds);
+
+    // If primary is preferred, ensure teams meet required skills overall
+    if (ctx.preferLevel === 'primary' && required.length > 0) {
+      const hasAllSkills = (tid: string) => {
+        const have = teamSkillsMap?.get(tid) ?? new Set<string>();
+        return required.every((sk) => have.has(sk));
+      };
+      teamIds = teamIds.filter(hasAllSkills);
+      // eslint-disable-next-line no-console
+      console.log('[EligibleTeams] final teamIds after primary-skill filter', teamIds);
+    }
     return teamIds;
   }
 }

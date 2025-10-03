@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { User } from '../../src/modules/directory/models/user.model';
 import { AppModule } from '../../src/app.module';
 import { JwtAuthGuard } from '../../src/modules/auth/jwt.guard';
 import { RequireAdminRoleGuard } from '../../src/modules/auth/guards/require-admin-role.guard';
@@ -20,7 +21,6 @@ const SLA_VALID = {
   P3: { ackMinutes: 240, resolveHours: 72 },
 };
 
-
 describe('[E2E] Palier 2 — ContractVersion immuable si référencée', () => {
   let app: INestApplication;
   let contractId: string;
@@ -35,7 +35,9 @@ describe('[E2E] Palier 2 — ContractVersion immuable si référencée', () => {
           const req = ctx.switchToHttp().getRequest();
           const actorRaw = req.headers['x-actor'] as string | undefined;
           const actor = actorRaw ? JSON.parse(actorRaw) : null;
-          req.user = actor; req.actor = actor; return true;
+          req.user = actor;
+          req.actor = actor;
+          return true;
         },
       })
       .overrideGuard(RequireAdminRoleGuard)
@@ -55,7 +57,11 @@ describe('[E2E] Palier 2 — ContractVersion immuable si référencée', () => {
       // Stub DirectoryQuery for ticket creation to avoid depending on seeded users
       .overrideProvider(TICKETS_TOKENS.DirectoryQuery)
       .useValue({
-        getUserMeta: async (_uid: string) => ({ companyId: IDs.companyA, role: 'admin', active: true }),
+        getUserMeta: async (_uid: string) => ({
+          companyId: IDs.companyA,
+          role: 'admin',
+          active: true,
+        }),
         isUserInTeam: async () => true,
       })
       .compile();
@@ -65,30 +71,60 @@ describe('[E2E] Palier 2 — ContractVersion immuable si référencée', () => {
 
     // Seed minimal: Company/Site/Building via models (no direct SEQUELIZE token)
     await Company.upsert({ id: IDs.companyA, name: 'Company A' } as any);
-    await Site.upsert({ id: IDs.siteA1, companyId: IDs.companyA, code: 'A1', name: 'Site A1', timezone: 'Europe/Paris' } as any);
-    await Building.upsert({ id: IDs.buildingA1, siteId: IDs.siteA1, code: 'BA1', name: 'A1' } as any);
+    await Site.upsert({
+      id: IDs.siteA1,
+      companyId: IDs.companyA,
+      code: 'A1',
+      name: 'Site A1',
+      timezone: 'Europe/Paris',
+    } as any);
+    await Building.upsert({
+      id: IDs.buildingA1,
+      siteId: IDs.siteA1,
+      code: 'BA1',
+      name: 'A1',
+    } as any);
+    await User.upsert({
+      id: 'aaaaaaaa-0000-0000-0000-000000000001',
+      companyId: IDs.companyA,
+      passwordHash: 'test',
+      email: 'u-a1@test.local',
+      displayName: 'Company A Admin',
+      role: 'admin',
+      active: true,
+      createdAt: new Date(),
+    } as any);
 
     const c = await request(app.getHttpServer())
       .post('/contracts')
       .set('x-actor', asActor('companyA_adminAll'))
-      .send({ siteId: IDs.siteA1, name: 'CA - Facilities', providerCompanyId: null })
+      .send({
+        siteId: IDs.siteA1,
+        name: 'CA - Facilities',
+        providerCompanyId: null,
+      })
       .expect(201);
     contractId = c.body.id;
 
     const v1 = await request(app.getHttpServer())
       .post('/contracts/versions')
       .set('x-actor', asActor('companyA_adminAll'))
-      .send({ contractId, version: 1, coverage: { timeWindows: ['business_hours'] } })
+      .send({
+        contractId,
+        version: 1,
+        coverage: { timeWindows: ['business_hours'] },
+      })
       .expect(201);
     contractVersionId = v1.body.id;
 
-    const hvacKey = `hvac-${Math.random().toString(36).slice(2,7)}`;
+    const hvacKey = `hvac-${Math.random().toString(36).slice(2, 7)}`;
     const cat = await request(app.getHttpServer())
       .post('/taxonomy/categories')
       .set('x-actor', asActor('companyA_adminAll'))
       .send({ key: hvacKey, label: 'HVAC' })
-      .expect((res) => [201,409].includes(res.status));
-    if (cat.status === 201) categoryId = cat.body.id; else {
+      .expect((res) => [201, 409].includes(res.status));
+    if (cat.status === 201) categoryId = cat.body.id;
+    else {
       const list = await request(app.getHttpServer())
         .get('/taxonomy/categories')
         .set('x-actor', asActor('companyA_adminAll'))
@@ -127,17 +163,29 @@ describe('[E2E] Palier 2 — ContractVersion immuable si référencée', () => {
       includedRow = cats.body.find((r: any) => r.categoryId === categoryId);
     }
     if (!includedRow || includedRow.included !== true) {
-      throw new Error('Category not included for this ContractVersion — aborting POST /tickets');
+      throw new Error(
+        'Category not included for this ContractVersion — aborting POST /tickets',
+      );
     }
 
     const ticketCreate = await request(app.getHttpServer())
       .post('/tickets')
       .set('x-actor', asActor('companyA_adminAll'))
-      .send({ siteId: IDs.siteA1, buildingId: IDs.buildingA1, categoryId, title: 'Clim HS', description: 'Plus d\'air froid', priority: 'P2', contractVersionId });
+      .send({
+        siteId: IDs.siteA1,
+        buildingId: IDs.buildingA1,
+        categoryId,
+        title: 'Clim HS',
+        description: "Plus d'air froid",
+        priority: 'P2',
+        contractVersionId,
+      });
     expect([200, 201]).toContain(ticketCreate.status);
   });
 
-  afterAll(async () => { await app.close(); });
+  afterAll(async () => {
+    await app.close();
+  });
 
   it('PATCH /contracts/versions/:id sur coverage après référence → 409', async () => {
     await request(app.getHttpServer())

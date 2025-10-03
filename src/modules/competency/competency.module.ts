@@ -28,60 +28,178 @@ import { ExportCompetencyDictionary } from './domain/use-cases/ExportCompetencyD
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([CompetencyMatrix, ContractVersion, Contract, Site, TeamZone, TeamSkill]),
+    SequelizeModule.forFeature([
+      CompetencyMatrix,
+      ContractVersion,
+      Contract,
+      Site,
+      TeamZone,
+      TeamSkill,
+    ]),
     AuthModule,
   ],
   controllers: [CompetencyController, CompetencyAdminController],
   providers: [
     CompetencyService,
-    { provide: TOKENS.TeamZoneRepository, useClass: SequelizeTeamZoneRepository },
-    { provide: TOKENS.TeamSkillRepository, useClass: SequelizeTeamSkillRepository },
-    { provide: TOKENS.CompetencyMatrixRepository, useClass: SequelizeCompetencyMatrixRepository },
+    {
+      provide: TOKENS.TeamZoneRepository,
+      useClass: SequelizeTeamZoneRepository,
+    },
+    {
+      provide: TOKENS.TeamSkillRepository,
+      useClass: SequelizeTeamSkillRepository,
+    },
+    {
+      provide: TOKENS.CompetencyMatrixRepository,
+      useClass: SequelizeCompetencyMatrixRepository,
+    },
     // External queries (default stubs, should be overridden in integration)
-    { provide: TOKENS.TaxonomyQuery, useValue: { requiredSkillsForCategory: async (_: string) => [] as string[] } },
-    { provide: TOKENS.ContractQuery, useValue: { getContractVersionMeta: async (id: string) => ({ contractId: 'c', siteId: 's', companyId: 'company-1' }) } },
-    { provide: TOKENS.CatalogQuery, useValue: { getBuildingMeta: async (id: string) => ({ siteId: 's', companyId: 'company-1' }) } },
-    { provide: TOKENS.TeamQuery, useValue: { getTeamMeta: async (id: string) => ({ companyId: 'company-1', active: true }) } },
+    {
+      provide: TOKENS.TaxonomyQuery,
+      useValue: {
+        requiredSkillsForCategory: async (_: string) => [] as string[],
+      },
+    },
+    {
+      provide: TOKENS.ContractQuery,
+      useValue: {
+        getContractVersionMeta: async (_id: string) => ({
+          contractId: 'c',
+          siteId: 's',
+          companyId: 'company-1',
+          version: 1,
+          coverage: {},
+          escalation: null,
+          approvals: null,
+          categories: [],
+        }),
+      },
+    },
+
+    {
+      provide: TOKENS.CatalogQuery,
+      useValue: {
+        getBuildingMeta: async (id: string) => ({
+          siteId: 's',
+          companyId: 'company-1',
+        }),
+      },
+    },
+    {
+      provide: TOKENS.TeamQuery,
+      useValue: {
+        getTeamMeta: async (id: string) => ({
+          companyId: 'company-1',
+          active: true,
+        }),
+      },
+    },
     // Use-cases wiring
     {
       provide: GrantTeamZone,
-      useFactory: (zones, contracts, catalog, teams) => new GrantTeamZone(zones, contracts, catalog, teams),
-      inject: [TOKENS.TeamZoneRepository, TOKENS.ContractQuery, TOKENS.CatalogQuery, TOKENS.TeamQuery],
+      useFactory: (zones, contracts, catalog, teams) =>
+        new GrantTeamZone(zones, contracts, catalog, teams),
+      inject: [
+        TOKENS.TeamZoneRepository,
+        TOKENS.ContractQuery,
+        TOKENS.CatalogQuery,
+        TOKENS.TeamQuery,
+      ],
     },
     {
       provide: RevokeTeamZone,
-      useFactory: (zones, contracts, catalog, teams) => new RevokeTeamZone(zones, contracts, catalog, teams),
-      inject: [TOKENS.TeamZoneRepository, TOKENS.ContractQuery, TOKENS.CatalogQuery, TOKENS.TeamQuery],
+      useFactory: (zones, contracts, catalog, teams) =>
+        new RevokeTeamZone(zones, contracts, catalog, teams),
+      inject: [
+        TOKENS.TeamZoneRepository,
+        TOKENS.ContractQuery,
+        TOKENS.CatalogQuery,
+        TOKENS.TeamQuery,
+      ],
     },
     {
       provide: GrantTeamSkill,
-      useFactory: (skills, contracts, teams) => new GrantTeamSkill(skills, contracts, teams),
-      inject: [TOKENS.TeamSkillRepository, TOKENS.ContractQuery, TOKENS.TeamQuery],
+      useFactory: (skills, contracts, teams) =>
+        new GrantTeamSkill(skills, contracts, teams),
+      inject: [
+        TOKENS.TeamSkillRepository,
+        TOKENS.ContractQuery,
+        TOKENS.TeamQuery,
+      ],
     },
     {
       provide: RevokeTeamSkill,
-      useFactory: (skills, contracts, teams) => new RevokeTeamSkill(skills, contracts, teams),
-      inject: [TOKENS.TeamSkillRepository, TOKENS.ContractQuery, TOKENS.TeamQuery],
+      useFactory: (skills, contracts, teams) =>
+        new RevokeTeamSkill(skills, contracts, teams),
+      inject: [
+        TOKENS.TeamSkillRepository,
+        TOKENS.ContractQuery,
+        TOKENS.TeamQuery,
+      ],
     },
     {
       provide: UpsertCompetency,
-      useFactory: (matrix, taxonomy, teamSkills, contracts, catalog, teams) => new UpsertCompetency(matrix, taxonomy, teamSkills, contracts, catalog, teams),
-      inject: [TOKENS.CompetencyMatrixRepository, TOKENS.TaxonomyQuery, TOKENS.TeamSkillRepository, TOKENS.ContractQuery, TOKENS.CatalogQuery, TOKENS.TeamQuery],
+      useFactory: (matrix, taxonomy, teamSkills, contracts, catalog, teams) =>
+        new UpsertCompetency(
+          matrix,
+          taxonomy,
+          teamSkills,
+          contracts,
+          catalog,
+          teams,
+        ),
+      inject: [
+        TOKENS.CompetencyMatrixRepository,
+        TOKENS.TaxonomyQuery,
+        TOKENS.TeamSkillRepository,
+        TOKENS.ContractQuery,
+        TOKENS.CatalogQuery,
+        TOKENS.TeamQuery,
+      ],
     },
     {
       provide: RemoveCompetency,
-      useFactory: (matrix, contracts, catalog, teams) => new RemoveCompetency(matrix, contracts, catalog, teams),
-      inject: [TOKENS.CompetencyMatrixRepository, TOKENS.ContractQuery, TOKENS.CatalogQuery, TOKENS.TeamQuery],
+      useFactory: (matrix, contracts, catalog, teams) =>
+        new RemoveCompetency(matrix, contracts, catalog, teams),
+      inject: [
+        TOKENS.CompetencyMatrixRepository,
+        TOKENS.ContractQuery,
+        TOKENS.CatalogQuery,
+        TOKENS.TeamQuery,
+      ],
     },
-    { provide: ListCompetencies, useFactory: (matrix) => new ListCompetencies(matrix), inject: [TOKENS.CompetencyMatrixRepository] },
-    { provide: ListTeamSkills, useFactory: (skills) => new ListTeamSkills(skills), inject: [TOKENS.TeamSkillRepository] },
-    { provide: ListTeamZones, useFactory: (zones) => new ListTeamZones(zones), inject: [TOKENS.TeamZoneRepository] },
+    {
+      provide: ListCompetencies,
+      useFactory: (matrix) => new ListCompetencies(matrix),
+      inject: [TOKENS.CompetencyMatrixRepository],
+    },
+    {
+      provide: ListTeamSkills,
+      useFactory: (skills) => new ListTeamSkills(skills),
+      inject: [TOKENS.TeamSkillRepository],
+    },
+    {
+      provide: ListTeamZones,
+      useFactory: (zones) => new ListTeamZones(zones),
+      inject: [TOKENS.TeamZoneRepository],
+    },
     {
       provide: ResolveEligibleTeams,
-      useFactory: (matrix, zones, skills, teams, taxonomy) => new ResolveEligibleTeams(matrix, zones, skills, teams, taxonomy),
-      inject: [TOKENS.CompetencyMatrixRepository, TOKENS.TeamZoneRepository, TOKENS.TeamSkillRepository, TOKENS.TeamQuery, TOKENS.TaxonomyQuery],
+      useFactory: (matrix, zones, skills, teams, taxonomy) =>
+        new ResolveEligibleTeams(matrix, zones, skills, teams, taxonomy),
+      inject: [
+        TOKENS.CompetencyMatrixRepository,
+        TOKENS.TeamZoneRepository,
+        TOKENS.TeamSkillRepository,
+        TOKENS.TeamQuery,
+        TOKENS.TaxonomyQuery,
+      ],
     },
-    { provide: ExportCompetencyDictionary, useFactory: (matrix) => new ExportCompetencyDictionary(matrix), inject: [TOKENS.CompetencyMatrixRepository] },
+    {
+      provide: ExportCompetencyDictionary,
+      useFactory: (matrix) => new ExportCompetencyDictionary(matrix),
+      inject: [TOKENS.CompetencyMatrixRepository],
+    },
   ],
   exports: [SequelizeModule, CompetencyService, ResolveEligibleTeams],
 })

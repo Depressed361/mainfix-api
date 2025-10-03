@@ -9,6 +9,7 @@ const config: Config = {
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
   },
+  setupFilesAfterEnv: ['<rootDir>/test/jest.setup.ts'],
   transform: {
     '^.+\\.(t|j)s$': [
       'ts-jest',

@@ -19,6 +19,7 @@ type Scope =
   | { level: 'contract'; contractId: string };
 
 type Actor = {
+  id: string;
   userId: string;
   companyId: string;
   roles: string[];
@@ -28,6 +29,7 @@ type Actor = {
 
 const actors: Record<string, Actor> = {
   companyA_adminAll: {
+    id: 'aaaaaaaa-0000-0000-0000-000000000001',
     userId: 'u-a1',
     companyId: IDs.companyA,
     roles: ['admin'],
@@ -35,6 +37,7 @@ const actors: Record<string, Actor> = {
     adminScopes: [{ level: 'company', companyId: IDs.companyA }],
   },
   companyA_site1: {
+    id: 'aaaaaaaa-0000-0000-0000-000000000002',
     userId: 'u-a2',
     companyId: IDs.companyA,
     roles: ['admin'],
@@ -42,6 +45,7 @@ const actors: Record<string, Actor> = {
     adminScopes: [{ level: 'site', siteId: IDs.siteA1 }],
   },
   companyB_adminAll: {
+    id: 'bbbbbbbb-0000-0000-0000-000000000001',
     userId: 'u-b1',
     companyId: IDs.companyB,
     roles: ['admin'],
@@ -97,7 +101,7 @@ export function toAuthenticatedActor(a: Actor) {
   companyScopeIds.add(a.companyId);
 
   return {
-    id: a.userId,
+    id: a.id,
     email: `${a.userId}@test.local`,
     role: a.roles.includes('admin') ? 'admin' : (a.roles[0] ?? 'maintainer'),
     companyId: a.companyId,

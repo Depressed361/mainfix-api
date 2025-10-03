@@ -10,6 +10,7 @@ import {
   HasMany,
   PrimaryKey,
 } from 'sequelize-typescript';
+import type { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Company } from '../../companies/company.model';
 import { Site } from '../../catalog/models/site.model';
 import { Building } from '../../catalog/models/buildings.model';
@@ -33,7 +34,7 @@ import { SatisfactionSurvey } from '../../satisfaction/models/satisfaction-surve
   tableName: 'tickets',
   timestamps: false,
 })
-export class Ticket extends Model<Ticket> {
+export class Ticket extends Model<InferAttributes<Ticket>, InferCreationAttributes<Ticket>> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
